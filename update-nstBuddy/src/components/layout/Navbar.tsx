@@ -11,6 +11,7 @@ const Navbar: React.FC = () => {
   const navLinks = [
     { name: 'Campuses', path: '/' },
     { name: 'Contribute', path: '/contribute' },
+    { name: 'Community', path: '/community', tag: 'New' },
     { name: 'Profile', path: '/profile' },
   ];
 
@@ -39,11 +40,16 @@ const Navbar: React.FC = () => {
               <Link
                 key={link.name}
                 to={link.path}
-                className={`text-sm font-semibold transition-colors relative py-5 ${
+                className={`flex items-center gap-1.5 text-sm font-semibold transition-colors relative py-5 ${
                   isActive(link.path) ? 'text-emerald-600' : 'text-gray-500 hover:text-gray-900'
                 }`}
               >
                 {link.name}
+                {link.tag && (
+                  <span className="text-[9px] bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded-full font-bold leading-none">
+                    {link.tag}
+                  </span>
+                )}
                 {isActive(link.path) && (
                   <span className="absolute bottom-0 left-0 w-full h-0.5 bg-emerald-600 rounded-t-full"></span>
                 )}

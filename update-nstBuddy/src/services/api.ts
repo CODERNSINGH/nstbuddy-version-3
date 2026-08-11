@@ -150,6 +150,158 @@ export const noticesApi = {
     },
 };
 
+// Community API - Twitter-style posts, comments, likes
+export interface CommunityAuthor {
+    name: string;
+    email: string;
+    picture?: string | null;
+}
+
+export interface CommunityPost {
+    id: string;
+    content: string;
+    images: string[];
+    createdAt: string;
+    updatedAt: string;
+    author: CommunityAuthor;
+    hashtags: string[];
+    likeCount: number;
+    commentCount: number;
+    likedByMe: boolean;
+    isMine: boolean;
+}
+
+export interface TrendingHashtag {
+    tag: string;
+    postCount: number;
+}
+
+export interface MyActivity {
+    postCount: number;
+    likeCount: number;
+    commentCount: number;
+    recent: Array<{
+        type: 'like' | 'comment';
+        createdAt: string;
+        postId: string;
+        postAuthor: string;
+        snippet: string;
+    }>;
+}
+
+export interface CommunityComment {
+    id: string;
+    content: string;
+    createdAt: string;
+    updatedAt: string;
+    postId: string;
+    authorEmail: string;
+    author: CommunityAuthor;
+}
+
+export interface CommunityPerson {
+    name: string;
+    email: string;
+    picture?: string | null;
+    postCount: number;
+}
+
+export interface GetPostsOptions {
+    limit?: number;
+    hashtag?: string;
+    author?: string;
+    search?: string;
+    sort?: 'new' | 'top';
+}
+
+export const communityApi = {
+    getPosts: async (idToken?: string, options: GetPostsOptions = {}) => {
+        const response = await api.get('/community/posts', {
+            params: options,
+            headers: idToken ? { Authorization: `Bearer ${idToken}` } : {},
+        });
+        return response.data;
+    },
+
+    getPost: async (id: string, idToken?: string) => {
+        const response = await api.get(`/community/posts/${id}`, {
+            headers: idToken ? { Authorization: `Bearer ${idToken}` } : {},
+        });
+        return response.data;
+    },
+
+    searchPeople: async (q: string, limit?: number) => {
+        const response = await api.get('/community/people/search', { params: { q, limit } });
+        return response.data;
+    },
+
+    getTrendingHashtags: async (limit?: number) => {
+        const response = await api.get('/community/hashtags/trending', { params: { limit } });
+        return response.data;
+    },
+
+    getMyActivity: async (idToken: string) => {
+        const response = await api.get('/community/my-activity', {
+            headers: { Authorization: `Bearer ${idToken}` },
+        });
+        return response.data;
+    },
+
+    createPost: async (content: string, idToken: string, images: string[] = []) => {
+        const response = await api.post('/community/posts', { content, images }, {
+            headers: { Authorization: `Bearer ${idToken}` },
+        });
+        return response.data;
+    },
+
+    updatePost: async (id: string, content: string, idToken: string, images: string[] = []) => {
+        const response = await api.put(`/community/posts/${id}`, { content, images }, {
+            headers: { Authorization: `Bearer ${idToken}` },
+        });
+        return response.data;
+    },
+
+    deletePost: async (id: string, idToken: string) => {
+        const response = await api.delete(`/community/posts/${id}`, {
+            headers: { Authorization: `Bearer ${idToken}` },
+        });
+        return response.data;
+    },
+
+    toggleLike: async (id: string, idToken: string) => {
+        const response = await api.post(`/community/posts/${id}/like`, {}, {
+            headers: { Authorization: `Bearer ${idToken}` },
+        });
+        return response.data;
+    },
+
+    getComments: async (postId: string) => {
+        const response = await api.get(`/community/posts/${postId}/comments`);
+        return response.data;
+    },
+
+    addComment: async (postId: string, content: string, idToken: string) => {
+        const response = await api.post(`/community/posts/${postId}/comments`, { content }, {
+            headers: { Authorization: `Bearer ${idToken}` },
+        });
+        return response.data;
+    },
+
+    updateComment: async (commentId: string, content: string, idToken: string) => {
+        const response = await api.put(`/community/comments/${commentId}`, { content }, {
+            headers: { Authorization: `Bearer ${idToken}` },
+        });
+        return response.data;
+    },
+
+    deleteComment: async (commentId: string, idToken: string) => {
+        const response = await api.delete(`/community/comments/${commentId}`, {
+            headers: { Authorization: `Bearer ${idToken}` },
+        });
+        return response.data;
+    },
+};
+
 // Auth API
 export const authApi = {
     login: async (email: string, uniqueKey: string) => {

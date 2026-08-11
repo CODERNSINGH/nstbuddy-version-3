@@ -13,6 +13,8 @@
     "@tailwindcss/vite": "^4.1.4",
     "axios": "^1.8.4",
     "date-fns": "^4.1.0",
+    "firebase": "^12.17.1",
+    "framer-motion": "^13.1.0",
     "lucide-react": "^0.501.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
