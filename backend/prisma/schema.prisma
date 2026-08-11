@@ -1,0 +1,111 @@
+// NST Buddy 2.0 - Multi-Campus Platform Schema
+// This is your Prisma schema file
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Campus Model - Delhi NCR, Pune, Bangalore
+model Campus {
+  id          String     @id @default(cuid())
+  name        String     @unique // "Delhi NCR", "Pune", "Bangalore"
+  slug        String     @unique // "delhi-ncr", "pune", "bangalore"
+  description String?
+  imageUrl    String?
+  isActive    Boolean    @default(true)
+  questions   Question[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@index([slug])
+  @@index([isActive])
+}
+
+// User Model - Enhanced with contribution tracking
+model User {
+  id                 String     @id @default(cuid())
+  firebaseUid        String     @unique
+  email              String     @unique
+  name               String
+  picture            String?
+  isPro              Boolean    @default(false)
+  isAdmin            Boolean    @default(false)
+
+  // Academic-integrity disclaimer acknowledgement (re-prompted every 7 days)
+  disclaimerAcknowledgedAt DateTime?
+
+  // Contribution stats
+  contributionCount  Int        @default(0)
+  contributionPoints Int        @default(0)
+
+  questions          Question[]
+  lastLoginAt        DateTime   @default(now())
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+
+  @@index([email])
+  @@index([firebaseUid])
+  @@index([contributionPoints])
+}
+
+// Question Model - Multi-campus with contributor tracking
+model Question {
+  id               String   @id @default(cuid())
+  questionName     String
+  subject          String
+  topic            String
+  link             String
+  semester         Int      // 1-8
+  
+  // Campus relation
+  campus           Campus   @relation(fields: [campusId], references: [id], onDelete: Cascade)
+  campusId         String
+  
+  // Contributor tracking
+  contributorEmail String
+  contributor      User     @relation(fields: [contributorEmail], references: [email], onDelete: Cascade)
+  
+  // Admin approval workflow
+  isApproved       Boolean  @default(true) // Auto-approve for now
+  approvedBy       String?
+  approvedAt       DateTime?
+  
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([campusId, semester])
+  @@index([contributorEmail])
+  @@index([subject])
+  @@index([topic])
+  @@index([isApproved])
+}
+
+// Notice Model - Unchanged
+model Notice {
+  id        String    @id @default(cuid())
+  title     String
+  content   String
+  priority  String    @default("normal") // low, normal, high
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  expiresAt DateTime?
+
+  @@index([isActive])
+  @@index([priority])
+}
+
+// Admin Model - Keep for backward compatibility (will be deprecated)
+model Admin {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  uniqueKey String
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
