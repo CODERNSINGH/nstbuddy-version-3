@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Users, ArrowRight, Lock } from 'lucide-react';
 import { GroupSummary } from '../../services/api';
+import { imagePreviewUrl } from '../../services/imagekit';
 import Avatar from '../community/Avatar';
 
 interface GroupCardProps {
@@ -16,16 +17,25 @@ const GroupCard: React.FC<GroupCardProps> = ({ group, onClick }) => {
         <motion.button
             onClick={onClick}
             whileHover={{ y: -3 }}
-            className="w-full text-left bg-white border border-gray-100 rounded-2xl shadow-sm hover:shadow-md transition-shadow p-5 flex flex-col gap-3"
+            className="w-full text-left bg-white border border-gray-100 rounded-2xl shadow-sm hover:shadow-md transition-shadow overflow-hidden flex flex-col"
         >
-            <div className="flex items-start gap-3">
-                <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white font-bold text-lg shrink-0">
-                    {group.name.charAt(0).toUpperCase()}
+            {group.bannerUrl && (
+                <div className="h-28 w-full overflow-hidden shrink-0">
+                    <img src={imagePreviewUrl(group.bannerUrl, 500)} alt="" className="w-full h-full object-cover" />
                 </div>
+            )}
+
+            <div className="p-5 flex flex-col gap-3 flex-1">
+            <div className="flex items-start gap-3">
+                {!group.bannerUrl && (
+                    <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center text-white font-bold text-lg shrink-0">
+                        {group.name.charAt(0).toUpperCase()}
+                    </div>
+                )}
                 <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5 flex-wrap mb-1">
                         {group.category && (
-                            <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
+                            <span className="text-[10px] font-semibold text-brand-700 bg-brand-50 px-2 py-0.5 rounded-full">
                                 {group.category}
                             </span>
                         )}
@@ -40,7 +50,7 @@ const GroupCard: React.FC<GroupCardProps> = ({ group, onClick }) => {
                             </span>
                         )}
                         {group.isMember && (
-                            <span className="text-[10px] font-semibold text-emerald-600">
+                            <span className="text-[10px] font-semibold text-brand-600">
                                 {group.isMine ? 'You admin' : 'Joined'}
                             </span>
                         )}
@@ -64,10 +74,11 @@ const GroupCard: React.FC<GroupCardProps> = ({ group, onClick }) => {
                 </div>
                 <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
                     <div
-                        className={`h-full rounded-full transition-all ${group.isFull ? 'bg-orange-400' : 'bg-emerald-500'}`}
+                        className={`h-full rounded-full transition-all ${group.isFull ? 'bg-orange-400' : 'bg-brand-500'}`}
                         style={{ width: `${pct}%` }}
                     />
                 </div>
+            </div>
             </div>
         </motion.button>
     );

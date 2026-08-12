@@ -23,19 +23,37 @@ api.interceptors.request.use((config) => {
 
 // Questions API
 export const questionsApi = {
-    getAll: async (params?: { campus?: string; semester?: number | string; subject?: string; topic?: string; search?: string; limit?: number }) => {
+    getAll: async (params?: { campus?: string; semester?: number | string; customCourse?: string; subject?: string; topic?: string; search?: string; limit?: number }) => {
         const response = await api.get('/questions', { params });
         return response.data;
     },
 
-    getFilters: async (params?: { campus?: string; semester?: number | string }) => {
+    getFilters: async (params?: { campus?: string; semester?: number | string; customCourse?: string }) => {
         const response = await api.get('/questions/filters', { params });
         return response.data;
     },
 
+    // Distinct subjects site-wide, for the contribute-form autocomplete (avoids near-duplicate subject strings)
+    getSubjects: async () => {
+        const response = await api.get('/questions/subjects');
+        return response.data;
+    },
+
+    getCustomCourses: async () => {
+        const response = await api.get('/questions/custom-courses');
+        return response.data;
+    },
+
+    // Admin-defined course names for the "Others" contribute dropdown - students pick, can't invent new ones
+    getCourseOptions: async () => {
+        const response = await api.get('/questions/course-options');
+        return response.data;
+    },
+
     contribute: async (data: {
-        campusSlug: string;
-        semester: number | string;
+        campusSlug?: string;
+        semester?: number | string;
+        customCourse?: string;
         questionName: string;
         subject: string;
         topic: string;
@@ -54,6 +72,7 @@ export const questionsApi = {
         link: string;
         semester?: number;
         campusSlug?: string;
+        customCourse?: string;
     }, idToken: string) => {
         const response = await api.post('/questions', data, {
             headers: { Authorization: `Bearer ${idToken}` },
@@ -68,6 +87,7 @@ export const questionsApi = {
         link: string;
         semester?: number;
         campusSlug?: string;
+        customCourse?: string;
     }, idToken: string) => {
         const response = await api.put(`/questions/${id}`, data, {
             headers: { Authorization: `Bearer ${idToken}` },
@@ -169,6 +189,7 @@ export interface CommunityPost {
     commentCount: number;
     likedByMe: boolean;
     isMine: boolean;
+    canModerate: boolean;
 }
 
 export interface TrendingHashtag {
@@ -310,12 +331,14 @@ export interface GroupSummary {
     name: string;
     description: string;
     category: string | null;
+    bannerUrl: string | null;
     capacity: number;
     memberCount: number;
     isFull: boolean;
     isActive: boolean;
     creator: CommunityAuthor;
     isMine: boolean;
+    canModerate: boolean;
     isMember: boolean;
     createdAt: string;
 }
@@ -358,7 +381,7 @@ export const groupsApi = {
     },
 
     create: async (
-        data: { name: string; description: string; category?: string; capacity: number; contactMethod: ContactMethod; contactValue: string },
+        data: { name: string; description: string; category?: string; bannerUrl?: string; capacity: number; contactMethod: ContactMethod; contactValue: string },
         idToken: string
     ) => {
         const response = await api.post('/groups', data, {
@@ -369,7 +392,7 @@ export const groupsApi = {
 
     update: async (
         id: string,
-        data: { name: string; description: string; category?: string; capacity: number; isActive: boolean },
+        data: { name: string; description: string; category?: string; bannerUrl?: string | null; capacity: number; isActive: boolean },
         idToken: string
     ) => {
         const response = await api.put(`/groups/${id}`, data, {
@@ -401,6 +424,69 @@ export const groupsApi = {
 
     removeMember: async (id: string, memberId: string, idToken: string) => {
         const response = await api.delete(`/groups/${id}/members/${memberId}`, {
+            headers: { Authorization: `Bearer ${idToken}` },
+        });
+        return response.data;
+    },
+};
+
+// Admin API - master moderation controls (admin-only, enforced server-side)
+export interface AdminUser {
+    id: string;
+    email: string;
+    name: string;
+    picture?: string | null;
+    isAdmin: boolean;
+    isPro: boolean;
+    isBanned: boolean;
+    contributionCount: number;
+    contributionPoints: number;
+    postCount: number;
+    commentCount: number;
+    createdAt: string;
+    lastLoginAt: string;
+}
+
+export interface AdminCourse {
+    id: string;
+    name: string;
+    description?: string | null;
+    imageUrl?: string | null;
+    questionCount: number;
+    createdAt: string;
+}
+
+export const adminApi = {
+    getUsers: async (idToken: string) => {
+        const response = await api.get('/admin/users', {
+            headers: { Authorization: `Bearer ${idToken}` },
+        });
+        return response.data;
+    },
+
+    setBanned: async (email: string, banned: boolean, idToken: string) => {
+        const response = await api.put(`/admin/users/${encodeURIComponent(email)}/ban`, { banned }, {
+            headers: { Authorization: `Bearer ${idToken}` },
+        });
+        return response.data;
+    },
+
+    getCustomCourses: async (idToken: string) => {
+        const response = await api.get('/admin/custom-courses', {
+            headers: { Authorization: `Bearer ${idToken}` },
+        });
+        return response.data;
+    },
+
+    createCustomCourse: async (data: { name: string; description?: string; imageUrl?: string }, idToken: string) => {
+        const response = await api.post('/admin/custom-courses', data, {
+            headers: { Authorization: `Bearer ${idToken}` },
+        });
+        return response.data;
+    },
+
+    deleteCustomCourse: async (id: string, idToken: string) => {
+        const response = await api.delete(`/admin/custom-courses/${id}`, {
             headers: { Authorization: `Bearer ${idToken}` },
         });
         return response.data;

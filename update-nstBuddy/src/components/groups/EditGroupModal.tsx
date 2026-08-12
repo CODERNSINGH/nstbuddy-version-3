@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Loader2 } from 'lucide-react';
 import { auth } from '../../config/firebase';
 import { groupsApi, GroupDetail as GroupDetailType } from '../../services/api';
+import BannerPicker from './BannerPicker';
 
 const CATEGORIES = ['Hackathon', 'Study Group', 'Project', 'Interview Prep', 'Other'];
 
@@ -16,10 +17,16 @@ const EditGroupModal: React.FC<EditGroupModalProps> = ({ group, onClose, onSaved
     const [name, setName] = useState(group.name);
     const [description, setDescription] = useState(group.description);
     const [category, setCategory] = useState(group.category || CATEGORIES[0]);
+    const [bannerUrl, setBannerUrl] = useState<string | null>(group.bannerUrl);
     const [capacity, setCapacity] = useState(group.capacity);
     const [isActive, setIsActive] = useState(group.isActive);
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState('');
+    const [idToken, setIdToken] = useState<string | null>(null);
+
+    useEffect(() => {
+        auth.currentUser?.getIdToken().then(setIdToken);
+    }, []);
 
     const canSubmit = name.trim() && description.trim() && capacity >= group.memberCount;
 
@@ -35,7 +42,7 @@ const EditGroupModal: React.FC<EditGroupModalProps> = ({ group, onClose, onSaved
             const token = await firebaseUser.getIdToken();
             const response = await groupsApi.update(
                 group.id,
-                { name: name.trim(), description: description.trim(), category, capacity, isActive },
+                { name: name.trim(), description: description.trim(), category, bannerUrl, capacity, isActive },
                 token
             );
             if (response.success) {
@@ -76,12 +83,14 @@ const EditGroupModal: React.FC<EditGroupModalProps> = ({ group, onClose, onSaved
                     </div>
 
                     <div className="p-6 space-y-5">
+                        <BannerPicker idToken={idToken} bannerUrl={bannerUrl} onChange={setBannerUrl} />
+
                         <div>
                             <label className="block text-xs font-semibold text-gray-500 mb-1.5">Group name</label>
                             <input
                                 value={name}
                                 onChange={(e) => setName(e.target.value.slice(0, 80))}
-                                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400"
+                                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-400"
                             />
                         </div>
 
@@ -91,7 +100,7 @@ const EditGroupModal: React.FC<EditGroupModalProps> = ({ group, onClose, onSaved
                                 value={description}
                                 onChange={(e) => setDescription(e.target.value.slice(0, 1000))}
                                 rows={3}
-                                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 resize-none"
+                                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-400 resize-none"
                             />
                         </div>
 
@@ -101,7 +110,7 @@ const EditGroupModal: React.FC<EditGroupModalProps> = ({ group, onClose, onSaved
                                 <select
                                     value={category}
                                     onChange={(e) => setCategory(e.target.value)}
-                                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400"
+                                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-400"
                                 >
                                     {CATEGORIES.map((c) => (
                                         <option key={c} value={c}>{c}</option>
@@ -116,7 +125,7 @@ const EditGroupModal: React.FC<EditGroupModalProps> = ({ group, onClose, onSaved
                                     max={100}
                                     value={capacity}
                                     onChange={(e) => setCapacity(Math.max(group.memberCount, Math.min(100, parseInt(e.target.value) || group.memberCount)))}
-                                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400"
+                                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-400"
                                 />
                                 <p className="text-[11px] text-gray-400 mt-1">Min {group.memberCount} (current members)</p>
                             </div>
@@ -131,7 +140,7 @@ const EditGroupModal: React.FC<EditGroupModalProps> = ({ group, onClose, onSaved
                                 type="checkbox"
                                 checked={isActive}
                                 onChange={(e) => setIsActive(e.target.checked)}
-                                className="w-5 h-5 accent-emerald-600"
+                                className="w-5 h-5 accent-brand-600"
                             />
                         </label>
 
@@ -149,7 +158,7 @@ const EditGroupModal: React.FC<EditGroupModalProps> = ({ group, onClose, onSaved
                         <button
                             type="submit"
                             disabled={!canSubmit || submitting}
-                            className="flex-1 flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-200 disabled:text-gray-400 text-white font-semibold text-sm py-2.5 rounded-xl transition-colors"
+                            className="flex-1 flex items-center justify-center gap-2 bg-brand-600 hover:bg-brand-700 disabled:bg-gray-200 disabled:text-gray-400 text-white font-semibold text-sm py-2.5 rounded-xl transition-colors"
                         >
                             {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
                             Save changes

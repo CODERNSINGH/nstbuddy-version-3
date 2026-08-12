@@ -109,7 +109,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         <AuthContext.Provider value={{ user, loading, login, logout, refreshUser }}>
             {loading ? (
                 <div className="flex flex-col items-center justify-center min-h-screen gap-4 bg-gray-50">
-                    <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-emerald-600"></div>
+                    <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-brand-600"></div>
                     <p className="text-gray-600 text-base animate-pulse font-medium">Please wait for 20-30 seconds...</p>
                 </div>
             ) : (

@@ -35,7 +35,7 @@ const Home: React.FC = () => {
 
           <Link
             to="/assignmentsSem4"
-            className="bg-emerald-600 hover:bg-emerald-700 text-white py-6 px-6 rounded-lg shadow-md transition-colors"
+            className="bg-brand-600 hover:bg-brand-700 text-white py-6 px-6 rounded-lg shadow-md transition-colors"
           >
             <h2 className="text-2xl font-bold mb-2">Complete All Sem-4 Assignments</h2>
             <p>Just Search and Open</p>

@@ -62,7 +62,7 @@ const ExtensionInstall: React.FC = () => {
               Back
             </button>
             <div>
-              <p className="text-sm text-emerald-600 uppercase tracking-[0.24em] font-semibold">Extension</p>
+              <p className="text-sm text-brand-600 uppercase tracking-[0.24em] font-semibold">Extension</p>
               <h1 className="text-3xl font-semibold text-gray-900">Install Our Extension</h1>
             </div>
           </div>
@@ -79,7 +79,7 @@ const ExtensionInstall: React.FC = () => {
         <div className="rounded-3xl bg-white shadow-lg p-8 space-y-6">
           <div className="grid gap-6 lg:grid-cols-[1fr_320px] items-center">
             <div className="space-y-4">
-              <p className="text-sm text-emerald-600 font-semibold">Quick install</p>
+              <p className="text-sm text-brand-600 font-semibold">Quick install</p>
               <h2 className="text-2xl font-semibold text-gray-900">Set up the NST Buddy extension in minutes</h2>
               <p className="text-gray-600 leading-7">
                 Download the extension ZIP, open the Chrome extensions page, enable Developer mode, and load the unpacked extension.
@@ -119,7 +119,7 @@ const ExtensionInstall: React.FC = () => {
         <section className="space-y-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-emerald-600 uppercase tracking-[0.24em] font-semibold">Installation Guide</p>
+              <p className="text-sm text-brand-600 uppercase tracking-[0.24em] font-semibold">Installation Guide</p>
               <h2 className="text-2xl font-semibold text-gray-900">Step-by-step instructions</h2>
             </div>
             <a

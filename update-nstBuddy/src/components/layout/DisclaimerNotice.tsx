@@ -38,8 +38,8 @@ const DisclaimerNotice: React.FC = () => {
             <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden">
                 <div className="p-8">
                     <div className="flex justify-center mb-5">
-                        <div className="p-3 bg-emerald-50 rounded-full">
-                            <ShieldAlert className="w-8 h-8 text-emerald-600" />
+                        <div className="p-3 bg-brand-50 rounded-full">
+                            <ShieldAlert className="w-8 h-8 text-brand-600" />
                         </div>
                     </div>
 
@@ -63,7 +63,7 @@ const DisclaimerNotice: React.FC = () => {
                     <button
                         onClick={handleAcknowledge}
                         disabled={submitting}
-                        className="w-full mt-6 py-3 bg-emerald-600 hover:bg-emerald-700 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-colors flex items-center justify-center gap-2"
+                        className="w-full mt-6 py-3 bg-brand-600 hover:bg-brand-700 disabled:opacity-60 disabled:cursor-not-allowed text-white font-semibold rounded-xl transition-colors flex items-center justify-center gap-2"
                     >
                         {submitting ? (
                             <>

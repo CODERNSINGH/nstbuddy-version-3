@@ -98,8 +98,13 @@ const CommentThread: React.FC<CommentThreadProps> = ({ postId, onCommentCountCha
                             <div className="bg-white rounded-2xl px-4 py-2.5 border border-gray-100">
                                 <div className="flex items-center justify-between gap-2">
                                     <span className="text-sm font-semibold text-gray-900">{comment.author.name}</span>
-                                    <span className="text-[11px] text-gray-400 shrink-0">
+                                    <span className="flex items-center gap-1.5 text-[11px] text-gray-400 shrink-0">
                                         {formatDistanceToNow(new Date(comment.createdAt), { addSuffix: true })}
+                                        {comment.updatedAt !== comment.createdAt && (
+                                            <span className="text-[9px] font-semibold text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded-full">
+                                                Edited
+                                            </span>
+                                        )}
                                     </span>
                                 </div>
 
@@ -109,7 +114,7 @@ const CommentThread: React.FC<CommentThreadProps> = ({ postId, onCommentCountCha
                                             value={editContent}
                                             onChange={(e) => setEditContent(e.target.value)}
                                             rows={2}
-                                            className="w-full text-sm border border-gray-200 rounded-lg p-2 focus:outline-none focus:ring-1 focus:ring-emerald-400"
+                                            className="w-full text-sm border border-gray-200 rounded-lg p-2 focus:outline-none focus:ring-1 focus:ring-brand-400"
                                         />
                                         <div className="flex justify-end gap-2 mt-1.5">
                                             <button
@@ -120,7 +125,7 @@ const CommentThread: React.FC<CommentThreadProps> = ({ postId, onCommentCountCha
                                             </button>
                                             <button
                                                 onClick={() => saveEdit(comment.id)}
-                                                className="flex items-center gap-1 text-xs font-semibold text-emerald-700 hover:text-emerald-800 px-2 py-1"
+                                                className="flex items-center gap-1 text-xs font-semibold text-brand-700 hover:text-brand-800 px-2 py-1"
                                             >
                                                 <Check className="w-3 h-3" /> Save
                                             </button>
@@ -147,7 +152,7 @@ const CommentThread: React.FC<CommentThreadProps> = ({ postId, onCommentCountCha
                                         <>
                                             <button
                                                 onClick={() => startEdit(comment)}
-                                                className="flex items-center gap-1 text-xs text-gray-400 hover:text-emerald-600"
+                                                className="flex items-center gap-1 text-xs text-gray-400 hover:text-brand-600"
                                             >
                                                 <Pencil className="w-3 h-3" /> Edit
                                             </button>
@@ -169,7 +174,7 @@ const CommentThread: React.FC<CommentThreadProps> = ({ postId, onCommentCountCha
             {user && (
                 <form onSubmit={handleAdd} className="flex items-center gap-3 pt-1">
                     <Avatar name={user.name} picture={user.picture} size="sm" />
-                    <div className="flex-1 flex items-center gap-2 bg-white border border-gray-200 rounded-full pl-4 pr-1.5 py-1.5 focus-within:ring-1 focus-within:ring-emerald-400 focus-within:border-emerald-400">
+                    <div className="flex-1 flex items-center gap-2 bg-white border border-gray-200 rounded-full pl-4 pr-1.5 py-1.5 focus-within:ring-1 focus-within:ring-brand-400 focus-within:border-brand-400">
                         <input
                             value={newComment}
                             onChange={(e) => setNewComment(e.target.value.slice(0, 1000))}
@@ -179,7 +184,7 @@ const CommentThread: React.FC<CommentThreadProps> = ({ postId, onCommentCountCha
                         <button
                             type="submit"
                             disabled={!newComment.trim() || submitting}
-                            className="w-7 h-7 shrink-0 flex items-center justify-center rounded-full bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-200 text-white transition-colors"
+                            className="w-7 h-7 shrink-0 flex items-center justify-center rounded-full bg-brand-600 hover:bg-brand-700 disabled:bg-gray-200 text-white transition-colors"
                         >
                             {submitting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
                         </button>

@@ -126,7 +126,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, onUpdated, onDeleted, onHasht
         <div
             id={`post-${post.id}`}
             className={`bg-white border rounded-2xl shadow-sm overflow-hidden transition-colors ${
-                highlighted ? 'border-emerald-300 ring-2 ring-emerald-100' : 'border-gray-100'
+                highlighted ? 'border-brand-300 ring-2 ring-brand-100' : 'border-gray-100'
             }`}
         >
             <div className="p-5">
@@ -137,12 +137,16 @@ const PostCard: React.FC<PostCardProps> = ({ post, onUpdated, onDeleted, onHasht
                     >
                         <Avatar name={post.author.name} picture={post.author.picture} />
                         <div>
-                            <h4 className="font-semibold text-gray-900 text-sm leading-tight group-hover:text-emerald-600 transition-colors">
+                            <h4 className="font-semibold text-gray-900 text-sm leading-tight group-hover:text-brand-600 transition-colors">
                                 {post.author.name}
                             </h4>
-                            <p className="text-xs text-gray-400">
+                            <p className="text-xs text-gray-400 flex items-center gap-1.5">
                                 {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}
-                                {post.updatedAt !== post.createdAt && ' · edited'}
+                                {post.updatedAt !== post.createdAt && (
+                                    <span className="text-[10px] font-semibold text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded-full">
+                                        Edited
+                                    </span>
+                                )}
                             </p>
                         </div>
                     </button>
@@ -163,10 +167,10 @@ const PostCard: React.FC<PostCardProps> = ({ post, onUpdated, onDeleted, onHasht
                                                 onClick={() => { handleCopyLink(); setMenuOpen(false); }}
                                                 className="w-full flex items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                                             >
-                                                {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Link2 className="w-3.5 h-3.5" />}
+                                                {copied ? <Check className="w-3.5 h-3.5 text-brand-600" /> : <Link2 className="w-3.5 h-3.5" />}
                                                 {copied ? 'Link copied' : 'Copy link'}
                                             </button>
-                                            {post.isMine && (
+                                            {post.canModerate && (
                                                 <>
                                                     <button
                                                         onClick={() => { startEdit(); setMenuOpen(false); }}
@@ -178,7 +182,8 @@ const PostCard: React.FC<PostCardProps> = ({ post, onUpdated, onDeleted, onHasht
                                                         onClick={() => setConfirmDelete(true)}
                                                         className="w-full flex items-center gap-2 px-4 py-2 text-sm text-red-600 hover:bg-red-50"
                                                     >
-                                                        <Trash2 className="w-3.5 h-3.5" /> Delete
+                                                        <Trash2 className="w-3.5 h-3.5" />
+                                                        {post.isMine ? 'Delete' : 'Delete (admin)'}
                                                     </button>
                                                 </>
                                             )}
@@ -209,7 +214,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, onUpdated, onDeleted, onHasht
                             onChange={(e) => setEditContent(e.target.value.slice(0, 2000))}
                             rows={3}
                             autoFocus
-                            className="w-full text-[15px] text-gray-900 border border-gray-200 rounded-xl p-3 focus:outline-none focus:ring-1 focus:ring-emerald-400 resize-none"
+                            className="w-full text-[15px] text-gray-900 border border-gray-200 rounded-xl p-3 focus:outline-none focus:ring-1 focus:ring-brand-400 resize-none"
                         />
                         <ImagePicker idToken={editToken} images={editImages} onChange={setEditImages} />
                         <div className="flex justify-end gap-2 mt-2">
@@ -222,7 +227,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, onUpdated, onDeleted, onHasht
                             <button
                                 onClick={handleSaveEdit}
                                 disabled={saving || (!editContent.trim() && editImages.length === 0)}
-                                className="flex items-center gap-1.5 text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-200 px-4 py-1.5 rounded-lg"
+                                className="flex items-center gap-1.5 text-sm font-semibold text-white bg-brand-600 hover:bg-brand-700 disabled:bg-gray-200 px-4 py-1.5 rounded-lg"
                             >
                                 {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
                                 Save
@@ -263,7 +268,7 @@ const PostCard: React.FC<PostCardProps> = ({ post, onUpdated, onDeleted, onHasht
                     <button
                         onClick={() => setCommentsOpen((o) => !o)}
                         className={`flex items-center gap-1.5 text-sm font-medium transition-colors ${
-                            commentsOpen ? 'text-emerald-600' : 'text-gray-400 hover:text-emerald-600'
+                            commentsOpen ? 'text-brand-600' : 'text-gray-400 hover:text-brand-600'
                         }`}
                     >
                         <MessageCircle className="w-4.5 h-4.5" />

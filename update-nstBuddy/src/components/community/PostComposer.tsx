@@ -61,7 +61,7 @@ const PostComposer: React.FC<PostComposerProps> = ({ onPosted }) => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.35 }}
             onSubmit={handleSubmit}
-            className="bg-white border border-gray-100 rounded-2xl shadow-sm p-5 focus-within:ring-1 focus-within:ring-emerald-300 focus-within:border-emerald-300 transition-all"
+            className="bg-white border border-gray-100 rounded-2xl shadow-sm p-5 focus-within:ring-1 focus-within:ring-brand-300 focus-within:border-brand-300 transition-all"
         >
             <div className="flex gap-3">
                 <Avatar name={user.name} picture={user.picture} />
@@ -90,7 +90,7 @@ const PostComposer: React.FC<PostComposerProps> = ({ onPosted }) => {
                             type="submit"
                             whileTap={{ scale: 0.95 }}
                             disabled={!canPost}
-                            className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-200 disabled:text-gray-400 text-white font-semibold text-sm py-2 px-5 rounded-full transition-colors"
+                            className="flex items-center gap-2 bg-brand-600 hover:bg-brand-700 disabled:bg-gray-200 disabled:text-gray-400 text-white font-semibold text-sm py-2 px-5 rounded-full transition-colors"
                         >
                             {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
                             Post

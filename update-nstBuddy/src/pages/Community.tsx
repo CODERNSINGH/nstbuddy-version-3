@@ -139,9 +139,9 @@ const Community: React.FC = () => {
                         {/* Feed */}
                         <div className="max-w-2xl w-full mx-auto lg:mx-0">
                             <div className="mb-6">
-                                <div className="inline-flex items-center gap-2 bg-emerald-50 border border-emerald-100 rounded-full py-1.5 px-4 mb-4">
-                                    <Users className="w-3.5 h-3.5 text-emerald-600" />
-                                    <span className="text-xs font-bold text-emerald-700">Peer to peer, campus-wide</span>
+                                <div className="inline-flex items-center gap-2 bg-brand-50 border border-brand-100 rounded-full py-1.5 px-4 mb-4">
+                                    <Users className="w-3.5 h-3.5 text-brand-600" />
+                                    <span className="text-xs font-bold text-brand-700">Peer to peer, campus-wide</span>
                                 </div>
                                 <h1 className="text-3xl font-bold text-gray-900 mb-2">Community</h1>
                                 <p className="text-gray-500">Ask questions, share tips, and talk with students across every campus.</p>
@@ -152,7 +152,7 @@ const Community: React.FC = () => {
                             </div>
 
                             {!user && (
-                                <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-4 mb-6 text-sm text-emerald-800">
+                                <div className="bg-brand-50 border border-brand-100 rounded-2xl p-4 mb-6 text-sm text-brand-800">
                                     Log in to post, like, and reply.
                                 </div>
                             )}
@@ -164,7 +164,7 @@ const Community: React.FC = () => {
                                     <button
                                         onClick={() => setSort('new')}
                                         className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full transition-colors ${
-                                            sort === 'new' ? 'bg-emerald-600 text-white' : 'text-gray-500 hover:text-gray-700'
+                                            sort === 'new' ? 'bg-brand-600 text-white' : 'text-gray-500 hover:text-gray-700'
                                         }`}
                                     >
                                         <Clock className="w-3.5 h-3.5" /> Newest
@@ -172,7 +172,7 @@ const Community: React.FC = () => {
                                     <button
                                         onClick={() => setSort('top')}
                                         className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full transition-colors ${
-                                            sort === 'top' ? 'bg-emerald-600 text-white' : 'text-gray-500 hover:text-gray-700'
+                                            sort === 'top' ? 'bg-brand-600 text-white' : 'text-gray-500 hover:text-gray-700'
                                         }`}
                                     >
                                         <TrendingUp className="w-3.5 h-3.5" /> Most Liked
@@ -190,25 +190,25 @@ const Community: React.FC = () => {
                                     >
                                         <div className="flex flex-wrap items-center gap-2 mb-4">
                                             {activeHashtag && (
-                                                <span className="flex items-center gap-1.5 bg-white border border-emerald-100 text-emerald-700 text-xs font-semibold pl-3 pr-2 py-1.5 rounded-full">
+                                                <span className="flex items-center gap-1.5 bg-white border border-brand-100 text-brand-700 text-xs font-semibold pl-3 pr-2 py-1.5 rounded-full">
                                                     #{activeHashtag}
-                                                    <button onClick={() => setActiveHashtag(null)} className="hover:text-emerald-900">
+                                                    <button onClick={() => setActiveHashtag(null)} className="hover:text-brand-900">
                                                         <X className="w-3 h-3" />
                                                     </button>
                                                 </span>
                                             )}
                                             {activeAuthor && (
-                                                <span className="flex items-center gap-1.5 bg-white border border-emerald-100 text-emerald-700 text-xs font-semibold pl-3 pr-2 py-1.5 rounded-full">
+                                                <span className="flex items-center gap-1.5 bg-white border border-brand-100 text-brand-700 text-xs font-semibold pl-3 pr-2 py-1.5 rounded-full">
                                                     Posts by {activeAuthor.name}
-                                                    <button onClick={() => setActiveAuthor(null)} className="hover:text-emerald-900">
+                                                    <button onClick={() => setActiveAuthor(null)} className="hover:text-brand-900">
                                                         <X className="w-3 h-3" />
                                                     </button>
                                                 </span>
                                             )}
                                             {searchQuery && (
-                                                <span className="flex items-center gap-1.5 bg-white border border-emerald-100 text-emerald-700 text-xs font-semibold pl-3 pr-2 py-1.5 rounded-full">
+                                                <span className="flex items-center gap-1.5 bg-white border border-brand-100 text-brand-700 text-xs font-semibold pl-3 pr-2 py-1.5 rounded-full">
                                                     "{searchQuery}"
-                                                    <button onClick={() => setSearchQuery('')} className="hover:text-emerald-900">
+                                                    <button onClick={() => setSearchQuery('')} className="hover:text-brand-900">
                                                         <X className="w-3 h-3" />
                                                     </button>
                                                 </span>

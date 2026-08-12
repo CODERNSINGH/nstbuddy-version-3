@@ -5,10 +5,39 @@ import { authenticateAdmin, authenticateUser } from '../middleware/auth.js';
 const router = express.Router();
 const prisma = new PrismaClient();
 
+// GET /api/questions/course-options - admin-defined course names for the "Others" contribute dropdown
+router.get('/course-options', async (req, res) => {
+    try {
+        const courses = await prisma.customCourse.findMany({
+            orderBy: { name: 'asc' },
+            select: { name: true },
+        });
+        res.json({ success: true, courses: courses.map((c) => c.name) });
+    } catch (error) {
+        console.error('Get course options error:', error);
+        res.status(500).json({ success: false, error: 'Failed to fetch course options' });
+    }
+});
+
+// GET /api/questions/subjects - all distinct subjects site-wide, for the contribute-form autocomplete
+router.get('/subjects', async (req, res) => {
+    try {
+        const rows = await prisma.question.findMany({
+            where: { isApproved: true },
+            select: { subject: true },
+            distinct: ['subject'],
+        });
+        res.json({ success: true, subjects: rows.map((r) => r.subject).sort() });
+    } catch (error) {
+        console.error('Get subjects error:', error);
+        res.status(500).json({ success: false, error: 'Failed to fetch subjects' });
+    }
+});
+
 // GET /api/questions - Get all questions with filtering
 router.get('/', async (req, res) => {
     try {
-        const { semester, subject, topic, search, campus, limit } = req.query;
+        const { semester, subject, topic, search, campus, customCourse, limit } = req.query;
 
         const where = {
             isApproved: true // Only show approved questions
@@ -22,6 +51,10 @@ router.get('/', async (req, res) => {
             if (campusRecord) {
                 where.campusId = campusRecord.id;
             }
+        }
+
+        if (customCourse) {
+            where.customCourse = customCourse;
         }
 
         if (semester) {
@@ -78,10 +111,45 @@ router.get('/', async (req, res) => {
     }
 });
 
+// GET /api/questions/custom-courses - admin-defined courses (with image/description) + real question counts,
+// used for the homepage's "Other Courses" browse grid
+router.get('/custom-courses', async (req, res) => {
+    try {
+        const [courses, grouped] = await Promise.all([
+            prisma.customCourse.findMany({ orderBy: { name: 'asc' } }),
+            prisma.question.groupBy({
+                by: ['customCourse'],
+                where: { isApproved: true, customCourse: { not: null } },
+                _count: { customCourse: true }
+            })
+        ]);
+
+        const countMap = Object.fromEntries(grouped.map((g) => [g.customCourse, g._count.customCourse]));
+
+        res.json({
+            success: true,
+            courses: courses
+                .map((c) => ({
+                    name: c.name,
+                    description: c.description,
+                    imageUrl: c.imageUrl,
+                    questionCount: countMap[c.name] || 0
+                }))
+                .sort((a, b) => b.questionCount - a.questionCount)
+        });
+    } catch (error) {
+        console.error('Get custom courses error:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Failed to fetch custom courses'
+        });
+    }
+});
+
 // GET /api/questions/filters - Get unique subjects and topics for filtering
 router.get('/filters', async (req, res) => {
     try {
-        const { semester, campus } = req.query;
+        const { semester, campus, customCourse } = req.query;
 
         const where = { isApproved: true };
 
@@ -92,6 +160,10 @@ router.get('/filters', async (req, res) => {
             if (campusRecord) {
                 where.campusId = campusRecord.id;
             }
+        }
+
+        if (customCourse) {
+            where.customCourse = customCourse;
         }
 
         if (semester) {
@@ -174,41 +246,43 @@ router.get('/solution', async (req, res) => {
 });
 
 // POST /api/questions/contribute - Public contribution endpoint (requires auth)
+// Supports two mutually-exclusive flows: College (campusSlug + semester) or Others (customCourse, free text)
 router.post('/contribute', authenticateUser, async (req, res) => {
     try {
-        const { questionName, subject, topic, link, semester, campusSlug } = req.body;
+        const { questionName, subject, topic, link, semester, campusSlug, customCourse } = req.body;
         const contributorEmail = req.user.email;
 
-        // Validation
-        if (!questionName || !subject || !topic || !link || !semester || !campusSlug) {
+        if (!questionName || !subject || !topic || !link) {
             return res.status(400).json({
                 success: false,
-                error: 'All fields are required'
+                error: 'Question title, subject, topic, and link are required'
             });
         }
 
-        // Validate semester (1-8)
-        const semesterNum = parseInt(semester);
-        if (semesterNum < 1 || semesterNum > 8) {
-            return res.status(400).json({
-                success: false,
-                error: 'Semester must be between 1 and 8'
-            });
+        const trimmedCourse = (customCourse || '').trim();
+        let campusId = null;
+        let semesterNum = null;
+
+        if (trimmedCourse) {
+            const course = await prisma.customCourse.findUnique({ where: { name: trimmedCourse } });
+            if (!course) {
+                return res.status(400).json({ success: false, error: 'Pick a course from the list - only admins can add new courses' });
+            }
+        } else {
+            if (!campusSlug || !semester) {
+                return res.status(400).json({ success: false, error: 'Select a campus and semester, or switch to "Others" and pick a course' });
+            }
+
+            semesterNum = parseInt(semester);
+            if (semesterNum < 1 || semesterNum > 8) {
+                return res.status(400).json({ success: false, error: 'Semester must be between 1 and 8' });
+            }
+
+            const campus = await prisma.campus.findUnique({ where: { slug: campusSlug } });
+            if (!campus) return res.status(404).json({ success: false, error: 'Campus not found' });
+            campusId = campus.id;
         }
 
-        // Find campus
-        const campus = await prisma.campus.findUnique({
-            where: { slug: campusSlug }
-        });
-
-        if (!campus) {
-            return res.status(404).json({
-                success: false,
-                error: 'Campus not found'
-            });
-        }
-
-        // Create question
         const question = await prisma.question.create({
             data: {
                 questionName,
@@ -216,7 +290,8 @@ router.post('/contribute', authenticateUser, async (req, res) => {
                 topic,
                 link,
                 semester: semesterNum,
-                campusId: campus.id,
+                campusId,
+                customCourse: trimmedCourse || null,
                 contributorEmail,
                 isApproved: true, // Auto-approve for now
                 approvedAt: new Date()
@@ -258,25 +333,30 @@ router.post('/contribute', authenticateUser, async (req, res) => {
 // POST /api/questions - Create question (admin only)
 router.post('/', authenticateAdmin, async (req, res) => {
     try {
-        const { questionName, subject, topic, link, semester, campusSlug } = req.body;
+        const { questionName, subject, topic, link, semester, campusSlug, customCourse } = req.body;
         const contributorEmail = req.user.email;
 
-        if (!questionName || !subject || !topic || !link || !semester || !campusSlug) {
+        if (!questionName || !subject || !topic || !link) {
             return res.status(400).json({
                 success: false,
-                error: 'All fields are required'
+                error: 'Question title, subject, topic, and link are required'
             });
         }
 
-        const campus = await prisma.campus.findUnique({
-            where: { slug: campusSlug }
-        });
+        const trimmedCourse = (customCourse || '').trim();
+        let campusId = null;
+        let semesterNum = null;
 
-        if (!campus) {
-            return res.status(404).json({
-                success: false,
-                error: 'Campus not found'
-            });
+        if (trimmedCourse) {
+            // Others flow - no campus/semester needed
+        } else {
+            if (!campusSlug || !semester) {
+                return res.status(400).json({ success: false, error: 'Select a campus and semester, or provide a custom course name' });
+            }
+            const campus = await prisma.campus.findUnique({ where: { slug: campusSlug } });
+            if (!campus) return res.status(404).json({ success: false, error: 'Campus not found' });
+            campusId = campus.id;
+            semesterNum = parseInt(semester);
         }
 
         const question = await prisma.question.create({
@@ -285,8 +365,9 @@ router.post('/', authenticateAdmin, async (req, res) => {
                 subject,
                 topic,
                 link,
-                semester: parseInt(semester),
-                campusId: campus.id,
+                semester: semesterNum,
+                campusId,
+                customCourse: trimmedCourse || null,
                 contributorEmail,
                 isApproved: true,
                 approvedBy: contributorEmail,
@@ -311,17 +392,22 @@ router.post('/', authenticateAdmin, async (req, res) => {
 router.put('/:id', authenticateAdmin, async (req, res) => {
     try {
         const { id } = req.params;
-        const { questionName, subject, topic, link, semester, campusSlug } = req.body;
+        const { questionName, subject, topic, link, semester, campusSlug, customCourse } = req.body;
+
+        const trimmedCourse = (customCourse || '').trim();
 
         const updateData = {
             questionName,
             subject,
             topic,
             link,
-            semester: parseInt(semester)
+            customCourse: trimmedCourse || null,
+            semester: trimmedCourse ? null : (semester ? parseInt(semester) : null)
         };
 
-        if (campusSlug) {
+        if (trimmedCourse) {
+            updateData.campusId = null;
+        } else if (campusSlug) {
             const campus = await prisma.campus.findUnique({
                 where: { slug: campusSlug }
             });

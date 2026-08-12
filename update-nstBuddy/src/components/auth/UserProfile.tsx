@@ -36,7 +36,7 @@ const UserProfile: React.FC = () => {
                         referrerPolicy="no-referrer"
                     />
                 ) : (
-                    <div className="w-8 h-8 rounded-full bg-emerald-500 flex items-center justify-center text-white font-semibold">
+                    <div className="w-8 h-8 rounded-full bg-brand-500 flex items-center justify-center text-white font-semibold">
                         {user.name.charAt(0).toUpperCase()}
                     </div>
                 )}
@@ -57,7 +57,7 @@ const UserProfile: React.FC = () => {
                                     referrerPolicy="no-referrer"
                                 />
                             ) : (
-                                <div className="w-12 h-12 rounded-full bg-emerald-500 flex items-center justify-center text-white font-semibold text-lg">
+                                <div className="w-12 h-12 rounded-full bg-brand-500 flex items-center justify-center text-white font-semibold text-lg">
                                     {user.name.charAt(0).toUpperCase()}
                                 </div>
                             )}

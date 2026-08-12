@@ -30,7 +30,7 @@ const ContactForm: React.FC<ContactFormProps> = ({ contactMethod, contactValue, 
                         type="button"
                         onClick={() => onMethodChange(m.value)}
                         className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full transition-colors ${
-                            contactMethod === m.value ? 'bg-white shadow-sm text-emerald-700' : 'text-gray-500 hover:text-gray-700'
+                            contactMethod === m.value ? 'bg-white shadow-sm text-brand-700' : 'text-gray-500 hover:text-gray-700'
                         }`}
                     >
                         <m.icon className="w-3.5 h-3.5" /> {m.label}
@@ -42,7 +42,7 @@ const ContactForm: React.FC<ContactFormProps> = ({ contactMethod, contactValue, 
                 value={contactValue}
                 onChange={(e) => onValueChange(e.target.value)}
                 placeholder={active.placeholder}
-                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 transition-colors"
+                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-400 transition-colors"
             />
             <p className="text-[11px] text-gray-400 mt-1.5">
                 Only visible to the group admin and to you - not shown to other members.

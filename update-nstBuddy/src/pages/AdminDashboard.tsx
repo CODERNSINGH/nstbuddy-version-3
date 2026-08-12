@@ -3,8 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import Layout from '../components/layout/Layout';
 import { useAuth } from '../contexts/AuthContext';
 import { auth } from '../config/firebase';
-import { Plus, Edit, Trash2, LogOut, Users, TrendingUp, BookOpen, MapPin, Filter } from 'lucide-react';
-import { campusesApi, contributionsApi, questionsApi } from '../services/api';
+import { Plus, Edit, Trash2, LogOut, Users, TrendingUp, BookOpen, MapPin, Filter, ShieldBan, ShieldCheck, MessageSquare, Search, GraduationCap, Loader2 } from 'lucide-react';
+import { campusesApi, contributionsApi, questionsApi, communityApi, adminApi, AdminUser, AdminCourse, CommunityPost } from '../services/api';
+import PostCard from '../components/community/PostCard';
+import BannerPicker from '../components/groups/BannerPicker';
 
 interface Campus {
     id: string;
@@ -48,11 +50,27 @@ const AdminDashboard: React.FC = () => {
     const navigate = useNavigate();
 
     // State
-    const [activeTab, setActiveTab] = useState<'overview' | 'questions' | 'leaderboard'>('overview');
+    const [activeTab, setActiveTab] = useState<'overview' | 'questions' | 'leaderboard' | 'users' | 'community' | 'courses'>('overview');
     const [campuses, setCampuses] = useState<Campus[]>([]);
     const [questions, setQuestions] = useState<Question[]>([]);
     const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
     const [loading, setLoading] = useState(false);
+
+    // Master control: all users + all community posts
+    const [users, setUsers] = useState<AdminUser[]>([]);
+    const [usersLoading, setUsersLoading] = useState(false);
+    const [userSearch, setUserSearch] = useState('');
+    const [banBusyEmail, setBanBusyEmail] = useState<string | null>(null);
+    const [allPosts, setAllPosts] = useState<CommunityPost[]>([]);
+    const [postsLoading, setPostsLoading] = useState(false);
+    const [courses, setCourses] = useState<AdminCourse[]>([]);
+    const [coursesLoading, setCoursesLoading] = useState(false);
+    const [newCourseName, setNewCourseName] = useState('');
+    const [newCourseDescription, setNewCourseDescription] = useState('');
+    const [newCourseImage, setNewCourseImage] = useState<string | null>(null);
+    const [courseSubmitting, setCourseSubmitting] = useState(false);
+    const [courseError, setCourseError] = useState('');
+    const [adminToken, setAdminToken] = useState<string | null>(null);
 
     // Filters
     const [selectedCampus, setSelectedCampus] = useState<string>('');
@@ -89,7 +107,128 @@ const AdminDashboard: React.FC = () => {
             fetchQuestions();
             fetchFilters();
         }
+        if (activeTab === 'users') fetchUsers();
+        if (activeTab === 'community') fetchAllPosts();
+        if (activeTab === 'courses') fetchCourses();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [activeTab, selectedCampus, selectedSemester, selectedSubject]);
+
+    const fetchCourses = async () => {
+        setCoursesLoading(true);
+        try {
+            const firebaseUser = auth.currentUser;
+            if (!firebaseUser) return;
+            const token = await firebaseUser.getIdToken();
+            setAdminToken(token);
+            const response = await adminApi.getCustomCourses(token);
+            if (response.success) setCourses(response.courses);
+        } catch (error) {
+            // Error fetching courses silently
+        } finally {
+            setCoursesLoading(false);
+        }
+    };
+
+    const handleAddCourse = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!newCourseName.trim() || courseSubmitting) return;
+        setCourseSubmitting(true);
+        setCourseError('');
+        try {
+            const firebaseUser = auth.currentUser;
+            if (!firebaseUser) return;
+            const token = await firebaseUser.getIdToken();
+            const response = await adminApi.createCustomCourse(
+                { name: newCourseName.trim(), description: newCourseDescription.trim() || undefined, imageUrl: newCourseImage || undefined },
+                token
+            );
+            if (response.success) {
+                setCourses((prev) => [...prev, { ...response.course, questionCount: 0 }].sort((a, b) => a.name.localeCompare(b.name)));
+                setNewCourseName('');
+                setNewCourseDescription('');
+                setNewCourseImage(null);
+            } else {
+                setCourseError(response.error || 'Failed to add course');
+            }
+        } catch (error: any) {
+            setCourseError(error.response?.data?.error || 'Failed to add course');
+        } finally {
+            setCourseSubmitting(false);
+        }
+    };
+
+    const handleDeleteCourse = async (course: AdminCourse) => {
+        if (!confirm(`Remove "${course.name}" from the course picker? Existing questions keep their tag.`)) return;
+        try {
+            const firebaseUser = auth.currentUser;
+            if (!firebaseUser) return;
+            const token = await firebaseUser.getIdToken();
+            const response = await adminApi.deleteCustomCourse(course.id, token);
+            if (response.success) setCourses((prev) => prev.filter((c) => c.id !== course.id));
+        } catch (error) {
+            alert('Failed to delete course');
+        }
+    };
+
+    const fetchUsers = async () => {
+        setUsersLoading(true);
+        try {
+            const firebaseUser = auth.currentUser;
+            if (!firebaseUser) return;
+            const token = await firebaseUser.getIdToken();
+            const response = await adminApi.getUsers(token);
+            if (response.success) setUsers(response.users);
+        } catch (error) {
+            // Error fetching users silently
+        } finally {
+            setUsersLoading(false);
+        }
+    };
+
+    const handleToggleBan = async (targetUser: AdminUser) => {
+        setBanBusyEmail(targetUser.email);
+        try {
+            const firebaseUser = auth.currentUser;
+            if (!firebaseUser) return;
+            const token = await firebaseUser.getIdToken();
+            const response = await adminApi.setBanned(targetUser.email, !targetUser.isBanned, token);
+            if (response.success) {
+                setUsers((prev) => prev.map((u) => (u.email === targetUser.email ? { ...u, isBanned: response.isBanned } : u)));
+            }
+        } catch (error) {
+            alert('Failed to update user');
+        } finally {
+            setBanBusyEmail(null);
+        }
+    };
+
+    const fetchAllPosts = async () => {
+        setPostsLoading(true);
+        try {
+            const firebaseUser = auth.currentUser;
+            const token = firebaseUser ? await firebaseUser.getIdToken() : undefined;
+            const response = await communityApi.getPosts(token, { limit: 100 });
+            if (response.success) setAllPosts(response.posts);
+        } catch (error) {
+            // Error fetching posts silently
+        } finally {
+            setPostsLoading(false);
+        }
+    };
+
+    const handleAdminPostUpdated = (updated: CommunityPost) => {
+        setAllPosts((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
+    };
+
+    const handleAdminPostDeleted = (id: string) => {
+        setAllPosts((prev) => prev.filter((p) => p.id !== id));
+    };
+
+    const filteredUsers = users.filter((u) => {
+        const q = userSearch.trim().toLowerCase();
+        if (!q) return true;
+        return u.name.toLowerCase().includes(q) || u.email.toLowerCase().includes(q);
+    });
 
     const fetchCampuses = async () => {
         try {
@@ -244,7 +383,7 @@ const AdminDashboard: React.FC = () => {
                 <button
                     onClick={() => setActiveTab('overview')}
                     className={`px-4 py-2 font-medium transition-colors ${activeTab === 'overview'
-                        ? 'text-emerald-600 border-b-2 border-emerald-600'
+                        ? 'text-brand-600 border-b-2 border-brand-600'
                         : 'text-gray-600 hover:text-gray-900'
                         }`}
                 >
@@ -253,7 +392,7 @@ const AdminDashboard: React.FC = () => {
                 <button
                     onClick={() => setActiveTab('questions')}
                     className={`px-4 py-2 font-medium transition-colors ${activeTab === 'questions'
-                        ? 'text-emerald-600 border-b-2 border-emerald-600'
+                        ? 'text-brand-600 border-b-2 border-brand-600'
                         : 'text-gray-600 hover:text-gray-900'
                         }`}
                 >
@@ -262,12 +401,42 @@ const AdminDashboard: React.FC = () => {
                 <button
                     onClick={() => setActiveTab('leaderboard')}
                     className={`px-4 py-2 font-medium transition-colors flex items-center gap-2 ${activeTab === 'leaderboard'
-                        ? 'text-emerald-600 border-b-2 border-emerald-600'
+                        ? 'text-brand-600 border-b-2 border-brand-600'
                         : 'text-gray-600 hover:text-gray-900'
                         }`}
                 >
                     <Users className="w-4 h-4" />
                     Contributors
+                </button>
+                <button
+                    onClick={() => setActiveTab('users')}
+                    className={`px-4 py-2 font-medium transition-colors flex items-center gap-2 ${activeTab === 'users'
+                        ? 'text-brand-600 border-b-2 border-brand-600'
+                        : 'text-gray-600 hover:text-gray-900'
+                        }`}
+                >
+                    <ShieldCheck className="w-4 h-4" />
+                    Users
+                </button>
+                <button
+                    onClick={() => setActiveTab('community')}
+                    className={`px-4 py-2 font-medium transition-colors flex items-center gap-2 ${activeTab === 'community'
+                        ? 'text-brand-600 border-b-2 border-brand-600'
+                        : 'text-gray-600 hover:text-gray-900'
+                        }`}
+                >
+                    <MessageSquare className="w-4 h-4" />
+                    Community
+                </button>
+                <button
+                    onClick={() => setActiveTab('courses')}
+                    className={`px-4 py-2 font-medium transition-colors flex items-center gap-2 ${activeTab === 'courses'
+                        ? 'text-brand-600 border-b-2 border-brand-600'
+                        : 'text-gray-600 hover:text-gray-900'
+                        }`}
+                >
+                    <GraduationCap className="w-4 h-4" />
+                    Courses
                 </button>
             </div>
 
@@ -276,7 +445,7 @@ const AdminDashboard: React.FC = () => {
                 <div>
                     {/* Stats Cards */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                        <div className="bg-gradient-to-br from-emerald-500 to-pink-500 rounded-xl p-6 text-white">
+                        <div className="bg-gradient-to-br from-brand-500 to-pink-500 rounded-xl p-6 text-white">
                             <div className="flex items-center justify-between mb-4">
                                 <BookOpen className="w-8 h-8" />
                                 <span className="text-3xl font-bold">{stats.totalQuestions}</span>
@@ -285,7 +454,7 @@ const AdminDashboard: React.FC = () => {
                             <p className="text-sm opacity-90">Across all campuses</p>
                         </div>
 
-                        <div className="bg-gradient-to-br from-emerald-500 to-cyan-500 rounded-xl p-6 text-white">
+                        <div className="bg-gradient-to-br from-brand-500 to-cyan-500 rounded-xl p-6 text-white">
                             <div className="flex items-center justify-between mb-4">
                                 <MapPin className="w-8 h-8" />
                                 <span className="text-3xl font-bold">{stats.totalCampuses}</span>
@@ -294,7 +463,7 @@ const AdminDashboard: React.FC = () => {
                             <p className="text-sm opacity-90">Delhi NCR, Pune, Bangalore</p>
                         </div>
 
-                        <div className="bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl p-6 text-white">
+                        <div className="bg-gradient-to-br from-green-500 to-brand-500 rounded-xl p-6 text-white">
                             <div className="flex items-center justify-between mb-4">
                                 <TrendingUp className="w-8 h-8" />
                                 <span className="text-3xl font-bold">{stats.totalContributors}</span>
@@ -339,7 +508,7 @@ const AdminDashboard: React.FC = () => {
                                         </span>
                                     </div>
 
-                                    <div className="flex items-center gap-2 text-emerald-600 mb-4">
+                                    <div className="flex items-center gap-2 text-brand-600 mb-4">
                                         <BookOpen className="w-5 h-5" />
                                         <span className="text-2xl font-bold">{campus.questionCount}</span>
                                         <span className="text-gray-600">questions</span>
@@ -350,7 +519,7 @@ const AdminDashboard: React.FC = () => {
                                             setSelectedCampus(campus.slug);
                                             setActiveTab('questions');
                                         }}
-                                        className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
+                                        className="w-full bg-brand-600 hover:bg-brand-700 text-white font-medium py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
                                     >
                                         Continue Learning
                                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -379,7 +548,7 @@ const AdminDashboard: React.FC = () => {
                                 <select
                                     value={selectedCampus}
                                     onChange={(e) => setSelectedCampus(e.target.value)}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500"
+                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500"
                                 >
                                     <option value="">All Campuses</option>
                                     {campuses.map((campus) => (
@@ -395,7 +564,7 @@ const AdminDashboard: React.FC = () => {
                                 <select
                                     value={selectedSemester}
                                     onChange={(e) => setSelectedSemester(e.target.value)}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500"
+                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500"
                                 >
                                     <option value="">All Semesters</option>
                                     {[1, 2, 3, 4, 5, 6, 7, 8].map((sem) => (
@@ -411,7 +580,7 @@ const AdminDashboard: React.FC = () => {
                                 <select
                                     value={selectedSubject}
                                     onChange={(e) => setSelectedSubject(e.target.value)}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500"
+                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500"
                                 >
                                     <option value="">All Subjects</option>
                                     {subjects.map((subject) => (
@@ -452,7 +621,7 @@ const AdminDashboard: React.FC = () => {
                                     link: ''
                                 });
                             }}
-                            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors"
+                            className="flex items-center gap-2 px-4 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-lg transition-colors"
                         >
                             <Plus className="w-4 h-4" />
                             Add Question
@@ -472,7 +641,7 @@ const AdminDashboard: React.FC = () => {
                                         <select
                                             value={questionForm.campusSlug}
                                             onChange={(e) => setQuestionForm({ ...questionForm, campusSlug: e.target.value })}
-                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500"
+                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500"
                                             required
                                         >
                                             <option value="">Select Campus</option>
@@ -489,7 +658,7 @@ const AdminDashboard: React.FC = () => {
                                         <select
                                             value={questionForm.semester}
                                             onChange={(e) => setQuestionForm({ ...questionForm, semester: e.target.value })}
-                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500"
+                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500"
                                             required
                                         >
                                             <option value="">Select Semester</option>
@@ -508,7 +677,7 @@ const AdminDashboard: React.FC = () => {
                                         type="text"
                                         value={questionForm.questionName}
                                         onChange={(e) => setQuestionForm({ ...questionForm, questionName: e.target.value })}
-                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500"
+                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500"
                                         required
                                     />
                                 </div>
@@ -520,7 +689,7 @@ const AdminDashboard: React.FC = () => {
                                             type="text"
                                             value={questionForm.subject}
                                             onChange={(e) => setQuestionForm({ ...questionForm, subject: e.target.value })}
-                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500"
+                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500"
                                             required
                                         />
                                     </div>
@@ -531,7 +700,7 @@ const AdminDashboard: React.FC = () => {
                                             type="text"
                                             value={questionForm.topic}
                                             onChange={(e) => setQuestionForm({ ...questionForm, topic: e.target.value })}
-                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500"
+                                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500"
                                             required
                                         />
                                     </div>
@@ -543,7 +712,7 @@ const AdminDashboard: React.FC = () => {
                                         type="url"
                                         value={questionForm.link}
                                         onChange={(e) => setQuestionForm({ ...questionForm, link: e.target.value })}
-                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500"
+                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500"
                                         placeholder="https://..."
                                         required
                                     />
@@ -552,7 +721,7 @@ const AdminDashboard: React.FC = () => {
                                 <div className="flex gap-4">
                                     <button
                                         type="submit"
-                                        className="px-6 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors"
+                                        className="px-6 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-lg transition-colors"
                                     >
                                         {editingQuestion ? 'Update' : 'Add'} Question
                                     </button>
@@ -574,7 +743,7 @@ const AdminDashboard: React.FC = () => {
                     {/* Questions List */}
                     {loading ? (
                         <div className="text-center py-12">
-                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600 mx-auto"></div>
+                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-600 mx-auto"></div>
                         </div>
                     ) : questions.length === 0 ? (
                         <div className="text-center py-12 bg-gray-50 rounded-xl">
@@ -614,7 +783,7 @@ const AdminDashboard: React.FC = () => {
                                                             className="w-6 h-6 rounded-full"
                                                         />
                                                     ) : (
-                                                        <div className="w-6 h-6 rounded-full bg-purple-200 flex items-center justify-center text-emerald-700 text-xs font-semibold">
+                                                        <div className="w-6 h-6 rounded-full bg-purple-200 flex items-center justify-center text-brand-700 text-xs font-semibold">
                                                             {question.contributor.name.charAt(0)}
                                                         </div>
                                                     )}
@@ -628,7 +797,7 @@ const AdminDashboard: React.FC = () => {
                                                 <div className="flex gap-2">
                                                     <button
                                                         onClick={() => startEditQuestion(question)}
-                                                        className="p-2 text-emerald-600 hover:bg-emerald-50 rounded"
+                                                        className="p-2 text-brand-600 hover:bg-brand-50 rounded"
                                                         title="Edit"
                                                     >
                                                         <Edit className="w-4 h-4" />
@@ -709,6 +878,232 @@ const AdminDashboard: React.FC = () => {
                             ))}
                         </div>
                     </div>
+                </div>
+            )}
+
+            {/* Users Tab - master control: view everyone, ban/unban from posting */}
+            {activeTab === 'users' && (
+                <div>
+                    <div className="flex items-center justify-between mb-6 gap-4 flex-wrap">
+                        <div>
+                            <h2 className="text-2xl font-bold text-gray-900">All Users</h2>
+                            <p className="text-gray-500 text-sm mt-1">{users.length} registered users</p>
+                        </div>
+                        <div className="relative">
+                            <Search className="w-4 h-4 text-gray-300 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                            <input
+                                value={userSearch}
+                                onChange={(e) => setUserSearch(e.target.value)}
+                                placeholder="Search by name or email…"
+                                className="bg-gray-50 border border-gray-200 rounded-full py-2 pl-9 pr-4 text-sm w-64 focus:outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-400"
+                            />
+                        </div>
+                    </div>
+
+                    {usersLoading ? (
+                        <div className="text-center py-12">
+                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-600 mx-auto"></div>
+                        </div>
+                    ) : (
+                        <div className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden">
+                            <table className="w-full">
+                                <thead className="bg-gray-50">
+                                    <tr>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">User</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Role</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Activity</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-100">
+                                    {filteredUsers.map((u) => (
+                                        <tr key={u.id} className="hover:bg-gray-50">
+                                            <td className="px-6 py-4">
+                                                <div className="flex items-center gap-3">
+                                                    {u.picture ? (
+                                                        <img src={u.picture} alt={u.name} referrerPolicy="no-referrer" className="w-8 h-8 rounded-full" />
+                                                    ) : (
+                                                        <div className="w-8 h-8 rounded-full bg-brand-100 flex items-center justify-center text-brand-700 text-xs font-semibold">
+                                                            {u.name.charAt(0)}
+                                                        </div>
+                                                    )}
+                                                    <div className="text-sm">
+                                                        <div className="font-medium text-gray-900">{u.name}</div>
+                                                        <div className="text-xs text-gray-500">{u.email}</div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                {u.isAdmin && (
+                                                    <span className="text-[11px] font-semibold text-brand-700 bg-brand-50 px-2.5 py-1 rounded-full">Admin</span>
+                                                )}
+                                                {u.isPro && (
+                                                    <span className="text-[11px] font-semibold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-full ml-1">Pro</span>
+                                                )}
+                                                {!u.isAdmin && !u.isPro && <span className="text-xs text-gray-400">Member</span>}
+                                            </td>
+                                            <td className="px-6 py-4 text-sm text-gray-600">
+                                                {u.contributionCount} questions · {u.postCount} posts · {u.commentCount} replies
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                {u.isBanned ? (
+                                                    <span className="flex items-center gap-1 text-[11px] font-semibold text-red-700 bg-red-50 px-2.5 py-1 rounded-full w-fit">
+                                                        <ShieldBan className="w-3 h-3" /> Banned
+                                                    </span>
+                                                ) : (
+                                                    <span className="text-[11px] font-semibold text-gray-500 bg-gray-100 px-2.5 py-1 rounded-full">Active</span>
+                                                )}
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                {u.isAdmin ? (
+                                                    <span className="text-xs text-gray-300">—</span>
+                                                ) : (
+                                                    <button
+                                                        onClick={() => handleToggleBan(u)}
+                                                        disabled={banBusyEmail === u.email}
+                                                        className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors disabled:opacity-50 ${
+                                                            u.isBanned
+                                                                ? 'text-brand-700 bg-brand-50 hover:bg-brand-100'
+                                                                : 'text-red-600 bg-red-50 hover:bg-red-100'
+                                                        }`}
+                                                    >
+                                                        {u.isBanned ? <ShieldCheck className="w-3.5 h-3.5" /> : <ShieldBan className="w-3.5 h-3.5" />}
+                                                        {u.isBanned ? 'Unban' : 'Ban from posting'}
+                                                    </button>
+                                                )}
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {/* Community Tab - master control: view/edit/delete any post */}
+            {activeTab === 'community' && (
+                <div>
+                    <div className="mb-6">
+                        <h2 className="text-2xl font-bold text-gray-900">All Community Posts</h2>
+                        <p className="text-gray-500 text-sm mt-1">
+                            {allPosts.length} posts · as admin you can edit or delete any of these
+                        </p>
+                    </div>
+
+                    {postsLoading ? (
+                        <div className="text-center py-12">
+                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-600 mx-auto"></div>
+                        </div>
+                    ) : allPosts.length === 0 ? (
+                        <div className="text-center py-12 bg-gray-50 rounded-xl">
+                            <MessageSquare className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                            <h3 className="text-xl font-semibold text-gray-700 mb-2">No posts yet</h3>
+                        </div>
+                    ) : (
+                        <div className="max-w-2xl space-y-4">
+                            {allPosts.map((post) => (
+                                <PostCard
+                                    key={post.id}
+                                    post={post}
+                                    onUpdated={handleAdminPostUpdated}
+                                    onDeleted={handleAdminPostDeleted}
+                                />
+                            ))}
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {/* Courses Tab - only admins can add courses; students pick from this list */}
+            {activeTab === 'courses' && (
+                <div>
+                    <div className="mb-6">
+                        <h2 className="text-2xl font-bold text-gray-900">Custom Courses</h2>
+                        <p className="text-gray-500 text-sm mt-1">
+                            Courses students can pick from the "Others" tab when contributing. Only admins can add new ones.
+                        </p>
+                    </div>
+
+                    <form onSubmit={handleAddCourse} className="max-w-lg mb-8 bg-white border border-gray-100 rounded-2xl shadow-sm p-6 space-y-4">
+                        <BannerPicker idToken={adminToken} bannerUrl={newCourseImage} onChange={setNewCourseImage} />
+
+                        <div>
+                            <label className="block text-xs font-semibold text-gray-500 mb-1.5">Course name</label>
+                            <input
+                                value={newCourseName}
+                                onChange={(e) => setNewCourseName(e.target.value.slice(0, 80))}
+                                placeholder="e.g., UI/UX Design Bootcamp"
+                                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-xs font-semibold text-gray-500 mb-1.5">Description (optional)</label>
+                            <textarea
+                                value={newCourseDescription}
+                                onChange={(e) => setNewCourseDescription(e.target.value.slice(0, 500))}
+                                rows={2}
+                                placeholder="What's this course about?"
+                                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent resize-none"
+                            />
+                        </div>
+
+                        {courseError && <p className="text-xs text-red-500">{courseError}</p>}
+
+                        <button
+                            type="submit"
+                            disabled={!newCourseName.trim() || courseSubmitting}
+                            className="flex items-center justify-center gap-2 bg-brand-600 hover:bg-brand-700 disabled:bg-gray-200 disabled:text-gray-400 text-white font-semibold py-2.5 px-5 rounded-lg transition-colors w-full"
+                        >
+                            {courseSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                            Add Course
+                        </button>
+                    </form>
+
+                    {coursesLoading ? (
+                        <div className="text-center py-12">
+                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-600 mx-auto"></div>
+                        </div>
+                    ) : courses.length === 0 ? (
+                        <div className="text-center py-12 bg-gray-50 rounded-xl">
+                            <GraduationCap className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                            <h3 className="text-xl font-semibold text-gray-700 mb-2">No courses yet</h3>
+                            <p className="text-gray-500 text-sm">Add one above to let students contribute to it.</p>
+                        </div>
+                    ) : (
+                        <div className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden max-w-2xl">
+                            {courses.map((course, i) => (
+                                <div
+                                    key={course.id}
+                                    className={`flex items-center gap-4 px-6 py-4 ${i !== courses.length - 1 ? 'border-b border-gray-50' : ''}`}
+                                >
+                                    {course.imageUrl ? (
+                                        <img src={course.imageUrl} alt="" className="w-12 h-12 rounded-lg object-cover shrink-0" />
+                                    ) : (
+                                        <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center text-white font-bold shrink-0">
+                                            {course.name.charAt(0).toUpperCase()}
+                                        </div>
+                                    )}
+                                    <div className="flex-1 min-w-0">
+                                        <p className="font-semibold text-gray-900 text-sm">{course.name}</p>
+                                        {course.description && (
+                                            <p className="text-xs text-gray-500 truncate mt-0.5">{course.description}</p>
+                                        )}
+                                        <p className="text-xs text-gray-400 mt-0.5">{course.questionCount} questions contributed</p>
+                                    </div>
+                                    <button
+                                        onClick={() => handleDeleteCourse(course)}
+                                        className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors shrink-0"
+                                        title="Remove course"
+                                    >
+                                        <Trash2 className="w-4 h-4" />
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    )}
                 </div>
             )}
         </Layout>

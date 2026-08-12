@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Loader2 } from 'lucide-react';
 import { auth } from '../../config/firebase';
 import { groupsApi, ContactMethod, GroupDetail } from '../../services/api';
 import ContactForm from './ContactForm';
+import BannerPicker from './BannerPicker';
 
 const CATEGORIES = ['Hackathon', 'Study Group', 'Project', 'Interview Prep', 'Other'];
 
@@ -16,11 +17,17 @@ const CreateGroupModal: React.FC<CreateGroupModalProps> = ({ onClose, onCreated 
     const [name, setName] = useState('');
     const [description, setDescription] = useState('');
     const [category, setCategory] = useState(CATEGORIES[0]);
+    const [bannerUrl, setBannerUrl] = useState<string | null>(null);
     const [capacity, setCapacity] = useState(5);
     const [contactMethod, setContactMethod] = useState<ContactMethod>('whatsapp');
     const [contactValue, setContactValue] = useState('');
     const [submitting, setSubmitting] = useState(false);
     const [error, setError] = useState('');
+    const [idToken, setIdToken] = useState<string | null>(null);
+
+    useEffect(() => {
+        auth.currentUser?.getIdToken().then(setIdToken);
+    }, []);
 
     const canSubmit = name.trim() && description.trim() && capacity >= 2 && contactValue.trim();
 
@@ -35,7 +42,15 @@ const CreateGroupModal: React.FC<CreateGroupModalProps> = ({ onClose, onCreated 
             if (!firebaseUser) return;
             const token = await firebaseUser.getIdToken();
             const response = await groupsApi.create(
-                { name: name.trim(), description: description.trim(), category, capacity, contactMethod, contactValue: contactValue.trim() },
+                {
+                    name: name.trim(),
+                    description: description.trim(),
+                    category,
+                    bannerUrl: bannerUrl || undefined,
+                    capacity,
+                    contactMethod,
+                    contactValue: contactValue.trim(),
+                },
                 token
             );
             if (response.success) {
@@ -76,13 +91,15 @@ const CreateGroupModal: React.FC<CreateGroupModalProps> = ({ onClose, onCreated 
                     </div>
 
                     <div className="p-6 space-y-5">
+                        <BannerPicker idToken={idToken} bannerUrl={bannerUrl} onChange={setBannerUrl} />
+
                         <div>
                             <label className="block text-xs font-semibold text-gray-500 mb-1.5">Group name</label>
                             <input
                                 value={name}
                                 onChange={(e) => setName(e.target.value.slice(0, 80))}
                                 placeholder="e.g. Smart India Hackathon Squad"
-                                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400"
+                                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-400"
                             />
                         </div>
 
@@ -93,7 +110,7 @@ const CreateGroupModal: React.FC<CreateGroupModalProps> = ({ onClose, onCreated 
                                 onChange={(e) => setDescription(e.target.value.slice(0, 1000))}
                                 rows={3}
                                 placeholder="What's this group for? What are you looking for in teammates?"
-                                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 resize-none"
+                                className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-400 resize-none"
                             />
                         </div>
 
@@ -103,7 +120,7 @@ const CreateGroupModal: React.FC<CreateGroupModalProps> = ({ onClose, onCreated 
                                 <select
                                     value={category}
                                     onChange={(e) => setCategory(e.target.value)}
-                                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400"
+                                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-400"
                                 >
                                     {CATEGORIES.map((c) => (
                                         <option key={c} value={c}>{c}</option>
@@ -118,7 +135,7 @@ const CreateGroupModal: React.FC<CreateGroupModalProps> = ({ onClose, onCreated 
                                     max={100}
                                     value={capacity}
                                     onChange={(e) => setCapacity(Math.max(2, Math.min(100, parseInt(e.target.value) || 2)))}
-                                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400"
+                                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-400"
                                 />
                             </div>
                         </div>
@@ -144,7 +161,7 @@ const CreateGroupModal: React.FC<CreateGroupModalProps> = ({ onClose, onCreated 
                         <button
                             type="submit"
                             disabled={!canSubmit || submitting}
-                            className="flex-1 flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-200 disabled:text-gray-400 text-white font-semibold text-sm py-2.5 rounded-xl transition-colors"
+                            className="flex-1 flex items-center justify-center gap-2 bg-brand-600 hover:bg-brand-700 disabled:bg-gray-200 disabled:text-gray-400 text-white font-semibold text-sm py-2.5 rounded-xl transition-colors"
                         >
                             {submitting && <Loader2 className="w-4 h-4 animate-spin" />}
                             Create group

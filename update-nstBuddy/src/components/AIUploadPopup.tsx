@@ -152,13 +152,13 @@ const AIUploadPopup: React.FC<AIUploadPopupProps> = ({ isOpen, onClose }) => {
         >
             <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
                 {/* Header */}
-                <div className="bg-gradient-to-r from-emerald-600 to-emerald-700 text-white p-6 rounded-t-xl">
+                <div className="bg-gradient-to-r from-brand-600 to-brand-700 text-white p-6 rounded-t-xl">
                     <div className="flex items-start justify-between">
                         <div className="flex-1">
                             <h2 className="text-2xl font-bold mb-2">
                                 AI Model Training Contribution
                             </h2>
-                            <p className="text-emerald-100 text-sm">
+                            <p className="text-brand-100 text-sm">
                                 Help improve our AI-powered learning assistant
                             </p>
                         </div>
@@ -175,7 +175,7 @@ const AIUploadPopup: React.FC<AIUploadPopupProps> = ({ isOpen, onClose }) => {
                 {/* Content */}
                 <div className="p-6 space-y-6">
                     {/* Info Message */}
-                    <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-5">
+                    <div className="bg-brand-50 border border-brand-200 rounded-lg p-5">
                         <h3 className="font-bold text-gray-900 mb-3 text-base">About This Initiative</h3>
                         <p className="text-gray-700 text-sm leading-relaxed mb-3">
                             We are currently fine-tuning <strong>Llama 3.1</strong> to create an intelligent assistant specifically for NST students.
@@ -185,27 +185,27 @@ const AIUploadPopup: React.FC<AIUploadPopupProps> = ({ isOpen, onClose }) => {
                             <p className="text-gray-700 text-sm font-semibold">The AI will have knowledge about:</p>
                             <ul className="grid grid-cols-2 gap-2 text-gray-700 text-sm">
                                 <li className="flex items-start">
-                                    <span className="text-emerald-600 mr-2">•</span>
+                                    <span className="text-brand-600 mr-2">•</span>
                                     <span>Exam dates & schedules</span>
                                 </li>
                                 <li className="flex items-start">
-                                    <span className="text-emerald-600 mr-2">•</span>
+                                    <span className="text-brand-600 mr-2">•</span>
                                     <span>Class timetables</span>
                                 </li>
                                 <li className="flex items-start">
-                                    <span className="text-emerald-600 mr-2">•</span>
+                                    <span className="text-brand-600 mr-2">•</span>
                                     <span>Course materials & notes</span>
                                 </li>
                                 <li className="flex items-start">
-                                    <span className="text-emerald-600 mr-2">•</span>
+                                    <span className="text-brand-600 mr-2">•</span>
                                     <span>Subject information</span>
                                 </li>
                                 <li className="flex items-start">
-                                    <span className="text-emerald-600 mr-2">•</span>
+                                    <span className="text-brand-600 mr-2">•</span>
                                     <span>Upcoming events</span>
                                 </li>
                                 <li className="flex items-start">
-                                    <span className="text-emerald-600 mr-2">•</span>
+                                    <span className="text-brand-600 mr-2">•</span>
                                     <span>Faculty details</span>
                                 </li>
                             </ul>
@@ -226,7 +226,7 @@ const AIUploadPopup: React.FC<AIUploadPopupProps> = ({ isOpen, onClose }) => {
                                         href={uploadedUrl}
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="text-sm text-emerald-600 hover:underline mt-2 inline-block"
+                                        className="text-sm text-brand-600 hover:underline mt-2 inline-block"
                                     >
                                         View uploaded file
                                     </a>
@@ -254,10 +254,10 @@ const AIUploadPopup: React.FC<AIUploadPopupProps> = ({ isOpen, onClose }) => {
                             onDrop={handleDrop}
                             onClick={() => fileInputRef.current?.click()}
                             className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-all ${isDragging
-                                ? 'border-emerald-500 bg-emerald-50'
+                                ? 'border-brand-500 bg-brand-50'
                                 : selectedFile
                                     ? 'border-green-500 bg-green-50'
-                                    : 'border-gray-300 hover:border-emerald-400 hover:bg-gray-50'
+                                    : 'border-gray-300 hover:border-brand-400 hover:bg-gray-50'
                                 }`}
                         >
                             <input
@@ -317,7 +317,7 @@ const AIUploadPopup: React.FC<AIUploadPopupProps> = ({ isOpen, onClose }) => {
                             value={fileName}
                             onChange={(e) => setFileName(e.target.value)}
                             placeholder="e.g., Data Structures Notes"
-                            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-sm"
+                            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent text-sm"
                         />
                     </div>
 
@@ -341,7 +341,7 @@ const AIUploadPopup: React.FC<AIUploadPopupProps> = ({ isOpen, onClose }) => {
                     <button
                         onClick={handleUpload}
                         disabled={uploading || !selectedFile || !fileName.trim() || uploadSuccess}
-                        className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm"
+                        className="w-full bg-brand-600 hover:bg-brand-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-sm"
                     >
                         {uploading ? (
                             <>

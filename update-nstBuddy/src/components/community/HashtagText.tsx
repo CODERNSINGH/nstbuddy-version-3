@@ -22,7 +22,7 @@ const HashtagText: React.FC<HashtagTextProps> = ({ content, onHashtagClick }) =>
                                 e.stopPropagation();
                                 onHashtagClick?.(part.slice(1).toLowerCase());
                             }}
-                            className="text-emerald-600 font-semibold hover:underline"
+                            className="text-brand-600 font-semibold hover:underline"
                         >
                             {part}
                         </button>
@@ -30,7 +30,7 @@ const HashtagText: React.FC<HashtagTextProps> = ({ content, onHashtagClick }) =>
                 }
                 if (/^@[a-zA-Z0-9_]+$/.test(part)) {
                     return (
-                        <span key={i} className="text-emerald-700/80 font-semibold">
+                        <span key={i} className="text-brand-700/80 font-semibold">
                             {part}
                         </span>
                     );

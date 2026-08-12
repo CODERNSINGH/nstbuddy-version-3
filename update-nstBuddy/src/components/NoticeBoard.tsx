@@ -82,7 +82,7 @@ const NoticeBoard: React.FC = () => {
 
                             {/* Content */}
                             <div className="p-4">
-                                <h3 className="font-semibold text-gray-900 text-base leading-snug mb-2 group-hover:text-emerald-600 transition-colors">
+                                <h3 className="font-semibold text-gray-900 text-base leading-snug mb-2 group-hover:text-brand-600 transition-colors">
                                     {notice.title}
                                 </h3>
 

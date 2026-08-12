@@ -50,8 +50,8 @@ const rankBadge = (rank: number) => {
     if (rank === 1) return { gradient: 'from-yellow-400 to-orange-400', Icon: Trophy, text: 'Campus Champion' };
     if (rank === 2) return { gradient: 'from-gray-300 to-gray-400', Icon: Medal, text: 'Runner-up' };
     if (rank === 3) return { gradient: 'from-orange-400 to-red-400', Icon: Medal, text: 'Third Place' };
-    if (rank <= 10) return { gradient: 'from-emerald-400 to-teal-500', Icon: Star, text: 'Top 10 Contributor' };
-    return { gradient: 'from-emerald-400 to-cyan-500', Icon: Target, text: 'Contributor' };
+    if (rank <= 10) return { gradient: 'from-brand-400 to-teal-500', Icon: Star, text: 'Top 10 Contributor' };
+    return { gradient: 'from-brand-400 to-cyan-500', Icon: Target, text: 'Contributor' };
 };
 
 const UserProfile: React.FC = () => {
@@ -137,7 +137,7 @@ const UserProfile: React.FC = () => {
         return (
             <Layout>
                 <div className="flex items-center justify-center min-h-[60vh]">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div>
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-600"></div>
                 </div>
             </Layout>
         );
@@ -152,7 +152,7 @@ const UserProfile: React.FC = () => {
                     <p className="text-gray-500 mb-6">Start contributing to build your profile.</p>
                     <button
                         onClick={() => navigate('/contribute')}
-                        className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2.5 px-6 rounded-full transition-colors"
+                        className="bg-brand-600 hover:bg-brand-700 text-white font-semibold py-2.5 px-6 rounded-full transition-colors"
                     >
                         Contribute Now
                     </button>
@@ -178,8 +178,8 @@ const UserProfile: React.FC = () => {
             <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
                 {/* Banner + overlapping avatar */}
                 <div className="relative h-36 sm:h-44 rounded-3xl overflow-hidden -mx-px">
-                    <div className="absolute inset-0 bg-[#0d1f17]" />
-                    <div className="absolute top-0 right-0 w-80 h-80 bg-emerald-500 rounded-full blur-[100px] opacity-40 -mr-24 -mt-24" />
+                    <div className="absolute inset-0 bg-[#16191D]" />
+                    <div className="absolute top-0 right-0 w-80 h-80 bg-brand-500 rounded-full blur-[100px] opacity-40 -mr-24 -mt-24" />
                     <div className="absolute bottom-0 left-1/3 w-64 h-64 bg-teal-400 rounded-full blur-[90px] opacity-20 -mb-32" />
                 </div>
 
@@ -195,7 +195,7 @@ const UserProfile: React.FC = () => {
                                         className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl object-cover border-4 border-white shadow-md"
                                     />
                                 ) : (
-                                    <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl bg-emerald-100 flex items-center justify-center text-emerald-700 font-bold text-4xl border-4 border-white shadow-md">
+                                    <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl bg-brand-100 flex items-center justify-center text-brand-700 font-bold text-4xl border-4 border-white shadow-md">
                                         {stats.name.charAt(0)}
                                     </div>
                                 )}
@@ -215,7 +215,7 @@ const UserProfile: React.FC = () => {
                             </span>
                             <button
                                 onClick={() => navigate('/contribute')}
-                                className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm py-2 px-4 rounded-full transition-colors shrink-0"
+                                className="flex items-center gap-1.5 bg-brand-600 hover:bg-brand-700 text-white font-semibold text-sm py-2 px-4 rounded-full transition-colors shrink-0"
                             >
                                 Contribute <ArrowRight className="w-3.5 h-3.5" />
                             </button>
@@ -247,22 +247,22 @@ const UserProfile: React.FC = () => {
                                 ) : (
                                     <div className="flex flex-wrap gap-2">
                                         {stats.contributionCount >= 1 && (
-                                            <span className="flex items-center gap-1.5 bg-emerald-50 text-emerald-800 text-xs font-medium px-3 py-1.5 rounded-full">
+                                            <span className="flex items-center gap-1.5 bg-brand-50 text-brand-800 text-xs font-medium px-3 py-1.5 rounded-full">
                                                 <Target className="w-3.5 h-3.5" /> First Contribution
                                             </span>
                                         )}
                                         {stats.contributionCount >= 5 && (
-                                            <span className="flex items-center gap-1.5 bg-emerald-50 text-emerald-800 text-xs font-medium px-3 py-1.5 rounded-full">
+                                            <span className="flex items-center gap-1.5 bg-brand-50 text-brand-800 text-xs font-medium px-3 py-1.5 rounded-full">
                                                 <Star className="w-3.5 h-3.5" /> Rising Star
                                             </span>
                                         )}
                                         {stats.contributionCount >= 10 && (
-                                            <span className="flex items-center gap-1.5 bg-emerald-50 text-emerald-800 text-xs font-medium px-3 py-1.5 rounded-full">
+                                            <span className="flex items-center gap-1.5 bg-brand-50 text-brand-800 text-xs font-medium px-3 py-1.5 rounded-full">
                                                 <Rocket className="w-3.5 h-3.5" /> Power Contributor
                                             </span>
                                         )}
                                         {stats.rank <= 10 && (
-                                            <span className="flex items-center gap-1.5 bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-xs font-medium px-3 py-1.5 rounded-full">
+                                            <span className="flex items-center gap-1.5 bg-gradient-to-r from-brand-500 to-teal-500 text-white text-xs font-medium px-3 py-1.5 rounded-full">
                                                 <Crown className="w-3.5 h-3.5" /> Top 10
                                             </span>
                                         )}
@@ -270,8 +270,8 @@ const UserProfile: React.FC = () => {
                                 )}
                             </div>
 
-                            <div className="bg-[#0d1f17] rounded-2xl p-5 relative overflow-hidden text-white">
-                                <div className="absolute top-0 right-0 w-40 h-40 bg-emerald-500 rounded-full blur-[60px] opacity-30 -mr-14 -mt-14" />
+                            <div className="bg-[#16191D] rounded-2xl p-5 relative overflow-hidden text-white">
+                                <div className="absolute top-0 right-0 w-40 h-40 bg-brand-500 rounded-full blur-[60px] opacity-30 -mr-14 -mt-14" />
                                 <div className="relative z-10">
                                     <h3 className="text-sm font-bold mb-1">Keep building your standing</h3>
                                     <p className="text-xs text-white/60 mb-4">Contribute, post, or start a group.</p>
@@ -297,7 +297,7 @@ const UserProfile: React.FC = () => {
                                         key={t.id}
                                         onClick={() => setTab(t.id)}
                                         className={`text-sm font-semibold px-4 py-2 rounded-full transition-colors ${
-                                            tab === t.id ? 'bg-emerald-600 text-white' : 'text-gray-500 hover:text-gray-700'
+                                            tab === t.id ? 'bg-brand-600 text-white' : 'text-gray-500 hover:text-gray-700'
                                         }`}
                                     >
                                         {t.label}
@@ -312,7 +312,7 @@ const UserProfile: React.FC = () => {
                                         <p className="text-gray-500 text-sm mb-4">No contributions yet</p>
                                         <button
                                             onClick={() => navigate('/contribute')}
-                                            className="bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold py-2 px-5 rounded-full transition-colors"
+                                            className="bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold py-2 px-5 rounded-full transition-colors"
                                         >
                                             Make Your First Contribution
                                         </button>
@@ -322,7 +322,7 @@ const UserProfile: React.FC = () => {
                                         {stats.recentContributions.map((contribution) => (
                                             <div
                                                 key={contribution.id}
-                                                className="flex items-center justify-between gap-4 p-4 bg-white border border-gray-100 rounded-xl hover:border-emerald-200 transition-colors"
+                                                className="flex items-center justify-between gap-4 p-4 bg-white border border-gray-100 rounded-xl hover:border-brand-200 transition-colors"
                                             >
                                                 <div className="min-w-0">
                                                     <h4 className="font-semibold text-gray-900 text-sm truncate mb-1.5">
@@ -346,7 +346,7 @@ const UserProfile: React.FC = () => {
                                                 <span
                                                     className={`shrink-0 px-3 py-1 rounded-full text-xs font-semibold ${
                                                         contribution.isApproved
-                                                            ? 'bg-emerald-100 text-emerald-700'
+                                                            ? 'bg-brand-100 text-brand-700'
                                                             : 'bg-gray-100 text-gray-600'
                                                     }`}
                                                 >
@@ -361,7 +361,7 @@ const UserProfile: React.FC = () => {
                             {tab === 'posts' && (
                                 postsLoading ? (
                                     <div className="flex items-center justify-center py-14">
-                                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div>
+                                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-600"></div>
                                     </div>
                                 ) : posts.length === 0 ? (
                                     <div className="bg-white border border-dashed border-gray-200 rounded-2xl text-center py-14">
@@ -369,7 +369,7 @@ const UserProfile: React.FC = () => {
                                         <p className="text-gray-500 text-sm mb-4">You haven't posted in the Community yet</p>
                                         <button
                                             onClick={() => navigate('/community')}
-                                            className="bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold py-2 px-5 rounded-full transition-colors"
+                                            className="bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold py-2 px-5 rounded-full transition-colors"
                                         >
                                             Start a Post
                                         </button>
@@ -392,7 +392,7 @@ const UserProfile: React.FC = () => {
                             {tab === 'groups' && (
                                 groupsLoading ? (
                                     <div className="flex items-center justify-center py-14">
-                                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div>
+                                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-600"></div>
                                     </div>
                                 ) : groups.length === 0 ? (
                                     <div className="bg-white border border-dashed border-gray-200 rounded-2xl text-center py-14">
@@ -400,7 +400,7 @@ const UserProfile: React.FC = () => {
                                         <p className="text-gray-500 text-sm mb-4">You haven't joined or created any groups yet</p>
                                         <button
                                             onClick={() => navigate('/groups')}
-                                            className="bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold py-2 px-5 rounded-full transition-colors"
+                                            className="bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold py-2 px-5 rounded-full transition-colors"
                                         >
                                             Browse Groups
                                         </button>

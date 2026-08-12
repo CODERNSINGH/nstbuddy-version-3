@@ -72,18 +72,18 @@ const Groups: React.FC = () => {
             <div className="bg-white min-h-screen">
                 {/* Hero */}
                 <div className="relative pt-16 pb-12 overflow-hidden">
-                    <div className="absolute top-0 right-0 w-full h-full bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-emerald-100/60 via-transparent to-transparent -z-10"></div>
-                    <div className="absolute bottom-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_bottom_left,_var(--tw-gradient-stops))] from-emerald-50/50 via-transparent to-transparent -z-10"></div>
+                    <div className="absolute top-0 right-0 w-full h-full bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-brand-100/60 via-transparent to-transparent -z-10"></div>
+                    <div className="absolute bottom-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_bottom_left,_var(--tw-gradient-stops))] from-brand-50/50 via-transparent to-transparent -z-10"></div>
 
                     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                         <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-8">
                             <div>
-                                <div className="inline-flex items-center gap-2 bg-emerald-50 border border-emerald-100 rounded-full py-1.5 px-4 mb-6">
-                                    <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
-                                    <span className="text-xs font-bold text-emerald-700">Find teammates, build something together</span>
+                                <div className="inline-flex items-center gap-2 bg-brand-50 border border-brand-100 rounded-full py-1.5 px-4 mb-6">
+                                    <Sparkles className="w-3.5 h-3.5 text-brand-600" />
+                                    <span className="text-xs font-bold text-brand-700">Find teammates, build something together</span>
                                 </div>
                                 <h1 className="text-4xl md:text-5xl font-bold text-gray-900 leading-tight mb-4 tracking-tight max-w-xl">
-                                    Build your dream team. <span className="text-emerald-600">Together.</span>
+                                    Build your dream team. <span className="text-brand-600">Together.</span>
                                 </h1>
                                 <p className="text-lg text-gray-600 max-w-lg">
                                     Create a group for your next hackathon or project, or join one that's looking for people.
@@ -93,7 +93,7 @@ const Groups: React.FC = () => {
                             {user && (
                                 <button
                                     onClick={() => setShowCreate(true)}
-                                    className="flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm py-3.5 px-6 rounded-full transition-colors shrink-0"
+                                    className="flex items-center justify-center gap-2 bg-brand-600 hover:bg-brand-700 text-white font-semibold text-sm py-3.5 px-6 rounded-full transition-colors shrink-0"
                                 >
                                     <Plus className="w-4 h-4" /> Create a group
                                 </button>
@@ -103,22 +103,22 @@ const Groups: React.FC = () => {
                         {/* Real stats */}
                         <div className="grid grid-cols-3 gap-4 max-w-2xl mt-10">
                             <div className="bg-white border border-gray-100 shadow-sm rounded-2xl p-5">
-                                <div className="w-9 h-9 rounded-lg bg-emerald-50 flex items-center justify-center mb-3">
-                                    <Layers className="w-4.5 h-4.5 text-emerald-600" />
+                                <div className="w-9 h-9 rounded-lg bg-brand-50 flex items-center justify-center mb-3">
+                                    <Layers className="w-4.5 h-4.5 text-brand-600" />
                                 </div>
                                 <div className="text-2xl font-bold text-gray-900">{loading ? '–' : groups.length}</div>
                                 <div className="text-xs text-gray-500">{tab === 'mine' ? 'Your groups' : 'Groups listed'}</div>
                             </div>
                             <div className="bg-white border border-gray-100 shadow-sm rounded-2xl p-5">
-                                <div className="w-9 h-9 rounded-lg bg-emerald-50 flex items-center justify-center mb-3">
-                                    <DoorOpen className="w-4.5 h-4.5 text-emerald-600" />
+                                <div className="w-9 h-9 rounded-lg bg-brand-50 flex items-center justify-center mb-3">
+                                    <DoorOpen className="w-4.5 h-4.5 text-brand-600" />
                                 </div>
                                 <div className="text-2xl font-bold text-gray-900">{loading ? '–' : openSpots}</div>
                                 <div className="text-xs text-gray-500">Open spots</div>
                             </div>
                             <div className="bg-white border border-gray-100 shadow-sm rounded-2xl p-5">
-                                <div className="w-9 h-9 rounded-lg bg-emerald-50 flex items-center justify-center mb-3">
-                                    <Users2 className="w-4.5 h-4.5 text-emerald-600" />
+                                <div className="w-9 h-9 rounded-lg bg-brand-50 flex items-center justify-center mb-3">
+                                    <Users2 className="w-4.5 h-4.5 text-brand-600" />
                                 </div>
                                 <div className="text-2xl font-bold text-gray-900">{user ? (myGroupCount ?? '–') : '–'}</div>
                                 <div className="text-xs text-gray-500">You're in</div>
@@ -134,7 +134,7 @@ const Groups: React.FC = () => {
                             <button
                                 onClick={() => setTab('discover')}
                                 className={`text-sm font-semibold px-4 py-2 rounded-full transition-colors ${
-                                    tab === 'discover' ? 'bg-white shadow-sm text-emerald-700' : 'text-gray-500 hover:text-gray-700'
+                                    tab === 'discover' ? 'bg-white shadow-sm text-brand-700' : 'text-gray-500 hover:text-gray-700'
                                 }`}
                             >
                                 Discover
@@ -143,7 +143,7 @@ const Groups: React.FC = () => {
                                 <button
                                     onClick={() => setTab('mine')}
                                     className={`text-sm font-semibold px-4 py-2 rounded-full transition-colors ${
-                                        tab === 'mine' ? 'bg-white shadow-sm text-emerald-700' : 'text-gray-500 hover:text-gray-700'
+                                        tab === 'mine' ? 'bg-white shadow-sm text-brand-700' : 'text-gray-500 hover:text-gray-700'
                                     }`}
                                 >
                                     My Groups
@@ -158,14 +158,14 @@ const Groups: React.FC = () => {
                                     value={search}
                                     onChange={(e) => setSearch(e.target.value)}
                                     placeholder="Search groups by name…"
-                                    className="w-full bg-gray-50 border border-transparent rounded-full py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:border-emerald-300 focus:bg-white transition-colors"
+                                    className="w-full bg-gray-50 border border-transparent rounded-full py-2.5 pl-10 pr-4 text-sm focus:outline-none focus:border-brand-300 focus:bg-white transition-colors"
                                 />
                             </div>
                         )}
                     </div>
 
                     {!user && tab === 'discover' && (
-                        <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-4 mb-6 text-sm text-emerald-800">
+                        <div className="bg-brand-50 border border-brand-100 rounded-2xl p-4 mb-6 text-sm text-brand-800">
                             Log in to create a group or join one.
                         </div>
                     )}
@@ -192,7 +192,7 @@ const Groups: React.FC = () => {
                             {user && (
                                 <button
                                     onClick={() => setShowCreate(true)}
-                                    className="mt-4 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold py-2 px-5 rounded-full transition-colors"
+                                    className="mt-4 bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold py-2 px-5 rounded-full transition-colors"
                                 >
                                     Create the first one
                                 </button>

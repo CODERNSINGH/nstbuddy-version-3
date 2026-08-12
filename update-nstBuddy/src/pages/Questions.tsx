@@ -25,8 +25,9 @@ interface Question {
 }
 
 const Questions: React.FC = () => {
-    const { campusSlug, semesterId } = useParams<{ campusSlug: string; semesterId: string }>();
+    const { campusSlug, semesterId, courseName } = useParams<{ campusSlug?: string; semesterId?: string; courseName?: string }>();
     const navigate = useNavigate();
+    const decodedCourseName = courseName ? decodeURIComponent(courseName) : undefined;
     const [questions, setQuestions] = useState<Question[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedSubject, setSelectedSubject] = useState<string>('');
@@ -36,14 +37,14 @@ const Questions: React.FC = () => {
     useEffect(() => {
         fetchQuestions();
         fetchFilters();
-    }, [campusSlug, semesterId, selectedSubject]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [campusSlug, semesterId, decodedCourseName, selectedSubject]);
 
     const fetchQuestions = async () => {
         try {
-            const params: any = {
-                campus: campusSlug,
-                semester: semesterId
-            };
+            const params: any = decodedCourseName
+                ? { customCourse: decodedCourseName }
+                : { campus: campusSlug, semester: semesterId };
             if (selectedSubject) {
                 params.subject = selectedSubject;
             }
@@ -61,7 +62,9 @@ const Questions: React.FC = () => {
 
     const fetchFilters = async () => {
         try {
-            const response = await questionsApi.getFilters({ campus: campusSlug, semester: semesterId });
+            const response = await questionsApi.getFilters(
+                decodedCourseName ? { customCourse: decodedCourseName } : { campus: campusSlug, semester: semesterId }
+            );
             if (response.success) {
                 setSubjects(response.subjects);
             }
@@ -85,7 +88,7 @@ const Questions: React.FC = () => {
         return (
             <Layout fullWidth>
                 <div className="flex items-center justify-center min-h-[60vh]">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div>
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-600"></div>
                 </div>
             </Layout>
         );
@@ -98,13 +101,13 @@ const Questions: React.FC = () => {
                 <aside className="w-64 border-r border-gray-200 hidden md:flex flex-col bg-white sticky top-16 h-[calc(100vh-64px)] overflow-y-auto">
                     <div className="p-6 border-b border-gray-100">
                         <button
-                            onClick={() => navigate(`/campus/${campusSlug}`)}
+                            onClick={() => navigate(decodedCourseName ? '/' : `/campus/${campusSlug}`)}
                             className="text-xs font-semibold uppercase tracking-wider text-gray-500 hover:text-black transition-colors mb-2 flex items-center gap-1"
                         >
                             <ChevronRight className="w-3 h-3 rotate-180" /> Back
                         </button>
                         <h2 className="text-xl font-bold text-gray-900 truncate">
-                            Semester {semesterId}
+                            {decodedCourseName || `Semester ${semesterId}`}
                         </h2>
                     </div>
                     <div className="flex-1 overflow-y-auto py-4">
@@ -115,7 +118,7 @@ const Questions: React.FC = () => {
                             <button
                                 onClick={() => setSelectedSubject('')}
                                 className={`w-full flex items-center justify-between px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${!selectedSubject
-                                    ? 'bg-emerald-50 text-emerald-700'
+                                    ? 'bg-brand-50 text-brand-700'
                                     : 'text-gray-600 hover:bg-gray-50'
                                     }`}
                             >
@@ -127,7 +130,7 @@ const Questions: React.FC = () => {
                                     key={subject}
                                     onClick={() => setSelectedSubject(subject)}
                                     className={`w-full flex items-center justify-between px-4 py-2.5 rounded-lg text-sm font-medium transition-colors ${selectedSubject === subject
-                                        ? 'bg-emerald-50 text-emerald-700'
+                                        ? 'bg-brand-50 text-brand-700'
                                         : 'text-gray-600 hover:bg-gray-50'
                                         }`}
                                 >
@@ -154,7 +157,7 @@ const Questions: React.FC = () => {
                                     placeholder="Search questions by name or topic..."
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="w-full pl-11 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all text-sm"
+                                    className="w-full pl-11 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all text-sm"
                                 />
                             </div>
                         </div>
@@ -181,7 +184,7 @@ const Questions: React.FC = () => {
                                 {filteredQuestions.map((question) => (
                                     <div
                                         key={question.id}
-                                        className="bg-white rounded-xl border border-gray-200 p-5 hover:border-emerald-300 hover:shadow-sm transition-all"
+                                        className="bg-white rounded-xl border border-gray-200 p-5 hover:border-brand-300 hover:shadow-sm transition-all"
                                     >
                                         <div className="flex items-start justify-between gap-4">
                                             <div className="flex-1 min-w-0">
@@ -189,7 +192,7 @@ const Questions: React.FC = () => {
                                                     {question.questionName}
                                                 </h3>
                                                 <div className="flex flex-wrap items-center gap-2 mb-4">
-                                                    <span className="text-xs font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full">
+                                                    <span className="text-xs font-semibold text-brand-700 bg-brand-50 px-2.5 py-1 rounded-full">
                                                         {question.subject}
                                                     </span>
                                                     <span className="text-xs font-medium text-gray-500 bg-gray-50 px-2.5 py-1 rounded-full">
@@ -235,9 +238,9 @@ const Questions: React.FC = () => {
                 {/* Right Sidebar - Widgets */}
                 <aside className="w-80 hidden lg:block bg-gray-50/30 p-6 border-l border-gray-200 sticky top-16 h-[calc(100vh-64px)] overflow-y-auto">
                     {/* Widget 1: Contribute Action */}
-                    <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-5 mb-6">
+                    <div className="bg-brand-50 border border-brand-100 rounded-xl p-5 mb-6">
                         <div className="flex items-center justify-between mb-2">
-                            <span className="text-xs font-bold text-emerald-800 bg-emerald-100 px-2 py-1 rounded">HELP COMMUNITY</span>
+                            <span className="text-xs font-bold text-brand-800 bg-brand-100 px-2 py-1 rounded">HELP COMMUNITY</span>
                         </div>
                         <h3 className="text-lg font-bold text-gray-900 mb-1">Contribute a Question</h3>
                         <p className="text-sm text-gray-600 mb-4">

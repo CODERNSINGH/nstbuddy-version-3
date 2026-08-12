@@ -32,7 +32,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requireAdmin 
                 <div className="text-center p-8 bg-white rounded-lg shadow-md">
                     <h1 className="text-2xl font-bold text-red-600 mb-2">Access Denied</h1>
                     <p className="text-gray-600">You don't have permission to access this page.</p>
-                    <a href="/" className="mt-4 inline-block text-emerald-600 hover:underline">
+                    <a href="/" className="mt-4 inline-block text-brand-600 hover:underline">
                         Go to Home
                     </a>
                 </div>

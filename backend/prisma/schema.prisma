@@ -35,6 +35,7 @@ model User {
   picture            String?
   isPro              Boolean    @default(false)
   isAdmin            Boolean    @default(false)
+  isBanned           Boolean    @default(false) // blocked from creating community posts/comments
 
   // Academic-integrity disclaimer acknowledgement (re-prompted every 7 days)
   disclaimerAcknowledgedAt DateTime?
@@ -44,6 +45,11 @@ model User {
   contributionPoints Int        @default(0)
 
   questions          Question[]
+  posts              Post[]
+  comments           Comment[]
+  likes              Like[]
+  groupsCreated      Group[]       @relation("GroupCreator")
+  groupMemberships   GroupMember[]
   lastLoginAt        DateTime   @default(now())
   createdAt          DateTime   @default(now())
   updatedAt          DateTime   @updatedAt
@@ -53,6 +59,133 @@ model User {
   @@index([contributionPoints])
 }
 
+// Group - a bounded-capacity team students can create and join (e.g. for a hackathon)
+model Group {
+  id          String   @id @default(cuid())
+  name        String
+  description String
+  category    String? // e.g. "Hackathon", "Study Group", "Project"
+  bannerUrl   String? // optional ImageKit CDN URL for the group's cover image
+  capacity    Int      // total member cap, including the creator
+  isActive    Boolean  @default(true) // false = closed to new joins, but existing members/history stay
+
+  creatorEmail String
+  creator      User    @relation("GroupCreator", fields: [creatorEmail], references: [email], onDelete: Cascade)
+
+  members     GroupMember[]
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([creatorEmail])
+  @@index([isActive])
+}
+
+// GroupMember - join record; carries the contact info a member shares so the
+// group admin can reach out (per-group, since a student may not want the same
+// number visible to every group they're in).
+model GroupMember {
+  id            String   @id @default(cuid())
+
+  group         Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  groupId       String
+
+  memberEmail   String
+  member        User     @relation(fields: [memberEmail], references: [email], onDelete: Cascade)
+
+  contactMethod String   // 'phone' | 'whatsapp' | 'email'
+  contactValue  String
+
+  role          String   @default("member") // 'admin' | 'member' - creator is seeded as 'admin'
+
+  joinedAt      DateTime @default(now())
+
+  @@unique([groupId, memberEmail])
+  @@index([groupId])
+  @@index([memberEmail])
+}
+
+// Community Post - Twitter-style feed post
+model Post {
+  id          String    @id @default(cuid())
+  content     String
+  images      String[]  @default([]) // ImageKit CDN URLs, max 5 enforced in the route
+
+  authorEmail String
+  author      User      @relation(fields: [authorEmail], references: [email], onDelete: Cascade)
+
+  likes       Like[]
+  comments    Comment[]
+  hashtags    PostHashtag[]
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([authorEmail])
+  @@index([createdAt])
+}
+
+// Hashtag - normalized tag extracted from Post content, tracks trending count
+model Hashtag {
+  id        String        @id @default(cuid())
+  tag       String        @unique // lowercase, without the '#'
+  postCount Int           @default(0)
+  posts     PostHashtag[]
+  createdAt DateTime      @default(now())
+  updatedAt DateTime      @updatedAt
+
+  @@index([postCount])
+}
+
+// Join table linking Posts to Hashtags
+model PostHashtag {
+  id        String  @id @default(cuid())
+
+  post      Post    @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId    String
+
+  hashtag   Hashtag @relation(fields: [hashtagId], references: [id], onDelete: Cascade)
+  hashtagId String
+
+  @@unique([postId, hashtagId])
+  @@index([postId])
+  @@index([hashtagId])
+}
+
+// Community Comment - a reply on a Post
+model Comment {
+  id          String   @id @default(cuid())
+  content     String
+
+  authorEmail String
+  author      User     @relation(fields: [authorEmail], references: [email], onDelete: Cascade)
+
+  post        Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId      String
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([postId])
+  @@index([authorEmail])
+}
+
+// Like on a community Post - one per user per post
+model Like {
+  id        String   @id @default(cuid())
+
+  userEmail String
+  user      User     @relation(fields: [userEmail], references: [email], onDelete: Cascade)
+
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId    String
+
+  createdAt DateTime @default(now())
+
+  @@unique([userEmail, postId])
+  @@index([postId])
+}
+
 // Question Model - Multi-campus with contributor tracking
 model Question {
   id               String   @id @default(cuid())
@@ -60,25 +193,29 @@ model Question {
   subject          String
   topic            String
   link             String
-  semester         Int      // 1-8
-  
-  // Campus relation
-  campus           Campus   @relation(fields: [campusId], references: [id], onDelete: Cascade)
-  campusId         String
-  
+  semester         Int?     // 1-8, only set for the College flow
+
+  // Campus relation - only set for the College flow
+  campus           Campus?  @relation(fields: [campusId], references: [id], onDelete: Cascade)
+  campusId         String?
+
+  // Free-text course name for the "Others" contribution flow (no campus/semester)
+  customCourse     String?
+
   // Contributor tracking
   contributorEmail String
   contributor      User     @relation(fields: [contributorEmail], references: [email], onDelete: Cascade)
-  
+
   // Admin approval workflow
   isApproved       Boolean  @default(true) // Auto-approve for now
   approvedBy       String?
   approvedAt       DateTime?
-  
+
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
   @@index([campusId, semester])
+  @@index([customCourse])
   @@index([contributorEmail])
   @@index([subject])
   @@index([topic])
@@ -108,4 +245,15 @@ model Admin {
   name      String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+// CustomCourse - admin-defined course names for the "Others" contribution flow.
+// Students pick from this list; only admins can add new entries.
+model CustomCourse {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  imageUrl    String? // ImageKit CDN URL, shown on the homepage course card
+  createdBy   String
+  createdAt   DateTime @default(now())
 }

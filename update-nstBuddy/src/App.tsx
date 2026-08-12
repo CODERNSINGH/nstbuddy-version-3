@@ -22,6 +22,7 @@ import AdminDashboard from './pages/AdminDashboard';
 import Days100 from './pages/Days100';
 import TestAIPopup from './pages/TestAIPopup';
 import ExtensionInstall from './pages/ExtensionInstall';
+import PrivacyPolicy from './pages/PrivacyPolicy';
 
 // Initialize Google Analytics
 ReactGA.initialize('G-P95H63YPVW');
@@ -34,11 +35,13 @@ const AppRoutes: React.FC = () => {
       {/* Public routes */}
       <Route path="/login" element={<Login />} />
       <Route path="/auth/callback" element={<AuthCallback />} />
+      <Route path="/privacy" element={<ProtectedRoute><PrivacyPolicy /></ProtectedRoute>} />
 
       {/* Protected routes - New NST Buddy 2.0 Structure */}
       <Route path="/" element={<ProtectedRoute><CampusSelection /></ProtectedRoute>} />
       <Route path="/campus/:campusSlug" element={<ProtectedRoute><SemesterSelection /></ProtectedRoute>} />
       <Route path="/campus/:campusSlug/semester/:semesterId" element={<ProtectedRoute><Questions /></ProtectedRoute>} />
+      <Route path="/course/:courseName" element={<ProtectedRoute><Questions /></ProtectedRoute>} />
       <Route path="/contribute" element={<ProtectedRoute><ContributePage /></ProtectedRoute>} />
       <Route path="/community" element={<ProtectedRoute><Community /></ProtectedRoute>} />
       <Route path="/groups" element={<ProtectedRoute><Groups /></ProtectedRoute>} />

@@ -33,8 +33,8 @@ const Login: React.FC = () => {
 
     return (
         <div className="relative min-h-screen flex items-center justify-center bg-white overflow-hidden">
-            <div className="absolute top-0 right-0 w-full h-full bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-emerald-100/60 via-transparent to-transparent -z-10"></div>
-            <div className="absolute bottom-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_bottom_left,_var(--tw-gradient-stops))] from-emerald-50/50 via-transparent to-transparent -z-10"></div>
+            <div className="absolute top-0 right-0 w-full h-full bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-brand-100/60 via-transparent to-transparent -z-10"></div>
+            <div className="absolute bottom-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_bottom_left,_var(--tw-gradient-stops))] from-brand-50/50 via-transparent to-transparent -z-10"></div>
 
             <div className="max-w-md w-full mx-4">
                 <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-12 text-center">

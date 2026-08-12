@@ -7,6 +7,7 @@ import Avatar from '../components/community/Avatar';
 import ContactForm from '../components/groups/ContactForm';
 import EditGroupModal from '../components/groups/EditGroupModal';
 import { groupsApi, GroupDetail as GroupDetailType, ContactMethod } from '../services/api';
+import { imagePreviewUrl } from '../services/imagekit';
 import { useAuth } from '../contexts/AuthContext';
 import { auth } from '../config/firebase';
 import {
@@ -168,7 +169,7 @@ const GroupDetail: React.FC = () => {
         return (
             <Layout>
                 <div className="flex items-center justify-center min-h-[60vh]">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div>
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-600"></div>
                 </div>
             </Layout>
         );
@@ -183,7 +184,7 @@ const GroupDetail: React.FC = () => {
                     <p className="text-gray-500 mb-6">It may have been deleted.</p>
                     <button
                         onClick={() => navigate('/groups')}
-                        className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2.5 px-6 rounded-full transition-colors"
+                        className="bg-brand-600 hover:bg-brand-700 text-white font-semibold py-2.5 px-6 rounded-full transition-colors"
                     >
                         Browse groups
                     </button>
@@ -208,14 +209,24 @@ const GroupDetail: React.FC = () => {
 
                     {/* Hero */}
                     <div className="relative rounded-3xl overflow-hidden mb-6">
-                        <div className="absolute inset-0 bg-[#0d1f17]" />
-                        <div className="absolute top-0 right-0 w-96 h-96 bg-emerald-500 rounded-full blur-[110px] opacity-30 -mr-32 -mt-32" />
+                        <div className="absolute inset-0 bg-[#16191D]" />
+                        {group.bannerUrl && (
+                            <>
+                                <img
+                                    src={imagePreviewUrl(group.bannerUrl, 1200)}
+                                    alt=""
+                                    className="absolute inset-0 w-full h-full object-cover opacity-40"
+                                />
+                                <div className="absolute inset-0 bg-gradient-to-t from-[#16191D] via-[#16191D]/70 to-[#16191D]/30" />
+                            </>
+                        )}
+                        <div className="absolute top-0 right-0 w-96 h-96 bg-brand-500 rounded-full blur-[110px] opacity-30 -mr-32 -mt-32" />
                         <div className="absolute bottom-0 left-0 w-64 h-64 bg-teal-400 rounded-full blur-[90px] opacity-15 -mb-24 -ml-16" />
 
                         <div className="relative z-10 p-8 sm:p-10">
                             <div className="flex flex-wrap items-center gap-2 mb-5">
                                 {group.category && (
-                                    <span className="flex items-center gap-1.5 text-xs font-semibold text-emerald-200 bg-white/10 px-3 py-1.5 rounded-full">
+                                    <span className="flex items-center gap-1.5 text-xs font-semibold text-brand-200 bg-white/10 px-3 py-1.5 rounded-full">
                                         <Tag className="w-3 h-3" /> {group.category}
                                     </span>
                                 )}
@@ -230,7 +241,7 @@ const GroupDetail: React.FC = () => {
                                     </span>
                                 )}
                                 {group.isActive && !group.isFull && (
-                                    <span className="flex items-center gap-1.5 text-xs font-semibold text-emerald-200 bg-emerald-400/10 px-3 py-1.5 rounded-full">
+                                    <span className="flex items-center gap-1.5 text-xs font-semibold text-brand-200 bg-brand-400/10 px-3 py-1.5 rounded-full">
                                         <CircleDot className="w-3 h-3" /> {spotsLeft} {spotsLeft === 1 ? 'spot' : 'spots'} left
                                     </span>
                                 )}
@@ -341,7 +352,7 @@ const GroupDetail: React.FC = () => {
                                     <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-3">Want in?</h3>
                                     <button
                                         onClick={() => setShowJoinForm(true)}
-                                        className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm py-2.5 px-6 rounded-xl transition-colors"
+                                        className="flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white font-semibold text-sm py-2.5 px-6 rounded-xl transition-colors"
                                     >
                                         <UserPlus className="w-4 h-4" /> Join this group
                                     </button>
@@ -368,12 +379,41 @@ const GroupDetail: React.FC = () => {
                                     <button
                                         type="submit"
                                         disabled={!joinValue.trim() || joining}
-                                        className="mt-3 flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-200 disabled:text-gray-400 text-white font-semibold text-sm py-2.5 px-6 rounded-xl transition-colors"
+                                        className="mt-3 flex items-center justify-center gap-2 bg-brand-600 hover:bg-brand-700 disabled:bg-gray-200 disabled:text-gray-400 text-white font-semibold text-sm py-2.5 px-6 rounded-xl transition-colors"
                                     >
                                         {joining && <Loader2 className="w-4 h-4 animate-spin" />}
                                         Confirm & Join
                                     </button>
                                 </motion.form>
+                            )}
+
+                            {user?.isAdmin && !group.isMine && (
+                                <div className="mt-5 pt-5 border-t border-gray-50">
+                                    <h3 className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-3">Site admin</h3>
+                                    {!confirmDelete ? (
+                                        <button
+                                            onClick={() => setConfirmDelete(true)}
+                                            className="flex items-center gap-2 bg-red-50 hover:bg-red-100 text-red-600 font-semibold text-sm py-2.5 px-5 rounded-xl transition-colors"
+                                        >
+                                            <Trash2 className="w-4 h-4" /> Delete group
+                                        </button>
+                                    ) : (
+                                        <div className="flex items-center gap-2 bg-red-50 rounded-xl px-4 py-2 w-fit">
+                                            <span className="text-sm text-red-700 font-medium">Delete permanently?</span>
+                                            <button
+                                                onClick={handleDelete}
+                                                disabled={busy}
+                                                className="text-xs font-bold text-white bg-red-600 hover:bg-red-700 px-3 py-1.5 rounded-lg"
+                                            >
+                                                {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : 'Delete'}
+                                            </button>
+                                            <button onClick={() => setConfirmDelete(false)} className="text-xs font-semibold text-gray-500 px-2">
+                                                Cancel
+                                            </button>
+                                        </div>
+                                    )}
+                                    <p className="text-xs text-gray-400 mt-2">Moderation action - you're not a member of this group.</p>
+                                </div>
                             )}
                         </div>
 
@@ -387,7 +427,7 @@ const GroupDetail: React.FC = () => {
                             </div>
                             <div className="h-2 bg-gray-100 rounded-full overflow-hidden mb-5">
                                 <div
-                                    className={`h-full rounded-full transition-all ${group.isFull ? 'bg-orange-400' : 'bg-gradient-to-r from-emerald-400 to-emerald-600'}`}
+                                    className={`h-full rounded-full transition-all ${group.isFull ? 'bg-orange-400' : 'bg-gradient-to-r from-brand-400 to-brand-600'}`}
                                     style={{ width: `${pct}%` }}
                                 />
                             </div>
@@ -403,7 +443,7 @@ const GroupDetail: React.FC = () => {
                                     <span className="flex items-center gap-1.5 text-gray-500">
                                         <CircleDot className="w-3.5 h-3.5" /> Status
                                     </span>
-                                    <span className={`font-medium ${group.isActive ? 'text-emerald-600' : 'text-gray-500'}`}>
+                                    <span className={`font-medium ${group.isActive ? 'text-brand-600' : 'text-gray-500'}`}>
                                         {group.isActive ? 'Open' : 'Closed'}
                                     </span>
                                 </div>
@@ -439,7 +479,7 @@ const GroupDetail: React.FC = () => {
                                                     <div className="flex items-center gap-1.5">
                                                         <span className="font-semibold text-gray-900 text-sm truncate">{member.name}</span>
                                                         {member.role === 'admin' && (
-                                                            <span className="flex items-center gap-0.5 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded-full">
+                                                            <span className="flex items-center gap-0.5 text-[10px] font-bold text-brand-700 bg-brand-50 px-1.5 py-0.5 rounded-full">
                                                                 <Shield className="w-2.5 h-2.5" /> Admin
                                                             </span>
                                                         )}
@@ -456,10 +496,10 @@ const GroupDetail: React.FC = () => {
                                                         onClick={() => handleCopy(member.id, member.contact!.value)}
                                                         className="flex items-center gap-1.5 text-xs font-medium text-gray-600 bg-gray-50 hover:bg-gray-100 px-2.5 py-1.5 rounded-lg transition-colors"
                                                     >
-                                                        <ContactIcon className="w-3.5 h-3.5 text-emerald-600" />
+                                                        <ContactIcon className="w-3.5 h-3.5 text-brand-600" />
                                                         <span className="max-w-[100px] sm:max-w-[140px] truncate">{member.contact.value}</span>
                                                         {copiedId === member.id ? (
-                                                            <Check className="w-3 h-3 text-emerald-600" />
+                                                            <Check className="w-3 h-3 text-brand-600" />
                                                         ) : (
                                                             <Copy className="w-3 h-3 text-gray-400" />
                                                         )}

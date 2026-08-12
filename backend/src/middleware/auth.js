@@ -40,6 +40,7 @@ export const authenticateUser = async (req, res, next) => {
             ...decodedToken,
             email: user.email,
             isAdmin: user.isAdmin,
+            isBanned: user.isBanned,
             userId: user.id
         };
 

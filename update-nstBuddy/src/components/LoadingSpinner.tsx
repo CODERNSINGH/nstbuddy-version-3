@@ -25,7 +25,7 @@ const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
 
             {showRenderMessage && (
                 <div className="mt-4 max-w-md text-center">
-                    <p className="text-sm text-gray-600 bg-emerald-50 border border-emerald-200 rounded-lg px-4 py-3">
+                    <p className="text-sm text-gray-600 bg-brand-50 border border-brand-200 rounded-lg px-4 py-3">
                         ⏳ <span className="font-semibold">Wait karlo yaar, Render load ho raha hai!</span>
                         <br />
                         <span className="text-xs text-gray-500 mt-1 block">

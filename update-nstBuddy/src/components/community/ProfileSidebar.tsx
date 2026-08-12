@@ -38,7 +38,7 @@ const ProfileSidebar: React.FC = () => {
                 <Link to="/profile" className="flex items-center gap-3 group">
                     <Avatar name={user.name} picture={user.picture} size="lg" />
                     <div className="min-w-0">
-                        <h4 className="font-bold text-gray-900 text-sm truncate group-hover:text-emerald-600 transition-colors">
+                        <h4 className="font-bold text-gray-900 text-sm truncate group-hover:text-brand-600 transition-colors">
                             {user.name}
                         </h4>
                         <p className="text-xs text-gray-400 truncate">{user.email}</p>
@@ -62,7 +62,7 @@ const ProfileSidebar: React.FC = () => {
 
                 <Link
                     to="/profile"
-                    className="flex items-center justify-center gap-1.5 mt-4 text-xs font-semibold text-emerald-600 hover:text-emerald-700"
+                    className="flex items-center justify-center gap-1.5 mt-4 text-xs font-semibold text-brand-600 hover:text-brand-700"
                 >
                     View full profile <ArrowRight className="w-3 h-3" />
                 </Link>
@@ -81,13 +81,13 @@ const ProfileSidebar: React.FC = () => {
                             <div key={i} className="flex items-start gap-2.5">
                                 <div
                                     className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 ${
-                                        item.type === 'like' ? 'bg-rose-50' : 'bg-emerald-50'
+                                        item.type === 'like' ? 'bg-rose-50' : 'bg-brand-50'
                                     }`}
                                 >
                                     {item.type === 'like' ? (
                                         <Heart className="w-3 h-3 text-rose-500" />
                                     ) : (
-                                        <MessageCircle className="w-3 h-3 text-emerald-600" />
+                                        <MessageCircle className="w-3 h-3 text-brand-600" />
                                     )}
                                 </div>
                                 <div className="min-w-0">

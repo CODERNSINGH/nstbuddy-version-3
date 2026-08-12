@@ -26,7 +26,7 @@ const Avatar: React.FC<AvatarProps> = ({ name, picture, size = 'md' }) => {
 
     return (
         <div
-            className={`${sizeClasses[size]} rounded-full bg-emerald-100 text-emerald-700 font-bold flex items-center justify-center shrink-0 border border-emerald-100`}
+            className={`${sizeClasses[size]} rounded-full bg-brand-100 text-brand-700 font-bold flex items-center justify-center shrink-0 border border-brand-100`}
         >
             {name.charAt(0).toUpperCase()}
         </div>

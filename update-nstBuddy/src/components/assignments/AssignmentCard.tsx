@@ -21,7 +21,7 @@ const AssignmentCard: React.FC<AssignmentCardProps> = ({ assignment, onClick }) 
           </span>
           
           {assignment.sheetSource && (
-            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800">
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-brand-100 text-brand-800">
               {formatSheetName(assignment.sheetSource)}
             </span>
           )}

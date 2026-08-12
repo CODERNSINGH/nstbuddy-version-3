@@ -68,7 +68,7 @@ const CommunitySearch: React.FC<CommunitySearchProps> = ({ onSearchPosts, onSele
                     <button
                         onClick={() => switchMode('posts')}
                         className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full transition-colors ${
-                            mode === 'posts' ? 'bg-white shadow-sm text-emerald-700' : 'text-gray-500 hover:text-gray-700'
+                            mode === 'posts' ? 'bg-white shadow-sm text-brand-700' : 'text-gray-500 hover:text-gray-700'
                         }`}
                     >
                         <MessageSquare className="w-3.5 h-3.5" /> Posts
@@ -76,7 +76,7 @@ const CommunitySearch: React.FC<CommunitySearchProps> = ({ onSearchPosts, onSele
                     <button
                         onClick={() => switchMode('people')}
                         className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full transition-colors ${
-                            mode === 'people' ? 'bg-white shadow-sm text-emerald-700' : 'text-gray-500 hover:text-gray-700'
+                            mode === 'people' ? 'bg-white shadow-sm text-brand-700' : 'text-gray-500 hover:text-gray-700'
                         }`}
                     >
                         <Users className="w-3.5 h-3.5" /> People
@@ -89,7 +89,7 @@ const CommunitySearch: React.FC<CommunitySearchProps> = ({ onSearchPosts, onSele
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
                         placeholder={mode === 'posts' ? 'Search posts…' : 'Search people who have posted…'}
-                        className="w-full bg-gray-50 border border-transparent rounded-full py-2 pl-9 pr-8 text-sm focus:outline-none focus:border-emerald-300 focus:bg-white transition-colors"
+                        className="w-full bg-gray-50 border border-transparent rounded-full py-2 pl-9 pr-8 text-sm focus:outline-none focus:border-brand-300 focus:bg-white transition-colors"
                     />
                     {query && (
                         <button

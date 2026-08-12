@@ -3,9 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import Layout from '../components/layout/Layout';
 import { useAuth } from '../contexts/AuthContext';
 import { auth } from '../config/firebase';
-import { Trophy, TrendingUp, Award, Star, Loader2, Brain } from 'lucide-react';
+import { Trophy, Loader2, Brain, GraduationCap, Sparkles, Link2, BookOpen, Tag, Layers } from 'lucide-react';
 import { campusesApi, contributionsApi, questionsApi } from '../services/api';
 import AIUploadPopup from '../components/AIUploadPopup';
+
+type ContributeMode = 'college' | 'others';
 
 interface Campus {
     id: string;
@@ -34,18 +36,32 @@ const ContributePage: React.FC = () => {
     const [formData, setFormData] = useState({
         campusSlug: '',
         semester: '',
+        customCourse: '',
         questionName: '',
         subject: '',
         topic: '',
         link: ''
     });
 
-    const [isCustomCourse, setIsCustomCourse] = useState(false);
+    const [mode, setMode] = useState<ContributeMode>('college');
+    const [courseOptions, setCourseOptions] = useState<string[]>([]);
+    const [subjectOptions, setSubjectOptions] = useState<string[]>([]);
 
     useEffect(() => {
         fetchCampuses();
         fetchLeaderboard();
+        fetchCourseOptions();
+        fetchSubjectOptions();
     }, []);
+
+    const fetchSubjectOptions = async () => {
+        try {
+            const response = await questionsApi.getSubjects();
+            if (response.success) setSubjectOptions(response.subjects);
+        } catch (error) {
+            // Error fetching subjects silently
+        }
+    };
 
     const fetchCampuses = async () => {
         try {
@@ -55,6 +71,15 @@ const ContributePage: React.FC = () => {
             }
         } catch (error) {
             // Error fetching campuses silently
+        }
+    };
+
+    const fetchCourseOptions = async () => {
+        try {
+            const response = await questionsApi.getCourseOptions();
+            if (response.success) setCourseOptions(response.courses);
+        } catch (error) {
+            // Error fetching course options silently
         }
     };
 
@@ -77,9 +102,13 @@ const ContributePage: React.FC = () => {
             return;
         }
 
+        if (mode === 'others' && !formData.customCourse) {
+            alert('Please select a course');
+            return;
+        }
+
         setLoading(true);
         try {
-            // Get Firebase ID token from current user
             const firebaseUser = auth.currentUser;
             if (!firebaseUser) {
                 alert('Please login to contribute');
@@ -89,11 +118,12 @@ const ContributePage: React.FC = () => {
 
             const token = await firebaseUser.getIdToken();
 
-            // Check for duplicate question title
-            const checkResponse = await questionsApi.getAll({
-                campus: formData.campusSlug,
-                semester: formData.semester
-            });
+            // Check for duplicate question title within the same scope
+            const checkResponse = await questionsApi.getAll(
+                mode === 'others'
+                    ? { customCourse: formData.customCourse }
+                    : { campus: formData.campusSlug, semester: formData.semester }
+            );
 
             if (checkResponse.success) {
                 const existingQuestion = checkResponse.questions.find(
@@ -101,19 +131,24 @@ const ContributePage: React.FC = () => {
                 );
 
                 if (existingQuestion) {
-                    alert('⚠️ A question with this title already exists! Please use a different title.');
+                    alert('A question with this title already exists! Please use a different title.');
                     setLoading(false);
                     return;
                 }
             }
 
-            const response = await questionsApi.contribute(formData, token);
+            const payload = mode === 'others'
+                ? { customCourse: formData.customCourse, questionName: formData.questionName, subject: formData.subject, topic: formData.topic, link: formData.link }
+                : { campusSlug: formData.campusSlug, semester: formData.semester, questionName: formData.questionName, subject: formData.subject, topic: formData.topic, link: formData.link };
+
+            const response = await questionsApi.contribute(payload, token);
 
             if (response.success) {
                 setSuccess(true);
                 setFormData({
                     campusSlug: '',
                     semester: '',
+                    customCourse: '',
                     questionName: '',
                     subject: '',
                     topic: '',
@@ -131,114 +166,25 @@ const ContributePage: React.FC = () => {
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
-
-        // If campus is changed, check if it's a custom course
-        if (name === 'campusSlug') {
-            const selectedCampus = campuses.find(c => c.slug === value);
-            const isCustom = selectedCampus?.description?.toLowerCase().includes('custom course') || false;
-            setIsCustomCourse(isCustom);
-
-            // If custom course, set semester to "0", otherwise reset to empty
-            setFormData({
-                ...formData,
-                campusSlug: value,
-                semester: isCustom ? '0' : ''
-            });
-        } else {
-            setFormData({
-                ...formData,
-                [name]: value
-            });
-        }
+        setFormData({ ...formData, [name]: value });
     };
 
     return (
         <Layout>
-            {/* Prize Banner - Professional White/Black Theme */}
-            <div className="mb-8 bg-gradient-to-br from-gray-900 via-black to-gray-800 rounded-2xl p-8 relative overflow-hidden border border-gray-700 shadow-2xl">
-                {/* Subtle geometric patterns */}
-                <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-white/5 to-transparent rounded-full -mr-48 -mt-48"></div>
-                <div className="absolute bottom-0 left-0 w-64 h-64 bg-gradient-to-tr from-white/5 to-transparent rounded-full -ml-32 -mb-32"></div>
-                <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full h-full">
-                    <div className="absolute top-0 left-0 w-2 h-2 bg-white/20 rounded-full"></div>
-                    <div className="absolute top-10 right-20 w-1 h-1 bg-white/30 rounded-full"></div>
-                    <div className="absolute bottom-10 left-20 w-1.5 h-1.5 bg-white/25 rounded-full"></div>
-                </div>
-
-                <div className="relative z-10 text-center">
-                    <div className="flex justify-center mb-4">
-                        <div className="relative">
-                            <Trophy className="w-16 h-16 text-yellow-400 drop-shadow-lg" />
-                            <div className="absolute inset-0 blur-xl bg-yellow-400/30"></div>
-                        </div>
+            {/* Reward banner */}
+            <div className="mb-8 bg-gradient-to-br from-brand-700 via-brand-600 to-brand-800 rounded-2xl p-8 relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-72 h-72 bg-white/10 rounded-full blur-3xl -mr-24 -mt-24" />
+                <div className="relative z-10 flex flex-col sm:flex-row items-center gap-6 text-center sm:text-left">
+                    <div className="w-16 h-16 rounded-2xl bg-white/10 flex items-center justify-center shrink-0">
+                        <Trophy className="w-8 h-8 text-white" />
                     </div>
-                    <h2 className="text-4xl md:text-5xl font-bold mb-3 bg-gradient-to-r from-white via-gray-100 to-gray-300 bg-clip-text text-transparent">
-                        Win Exciting Prizes
-                    </h2>
-                    <div className="mb-4">
-                        <p className="text-sm text-gray-400 mb-2">Gifts Worth</p>
-                        <p className="text-5xl md:text-6xl font-black text-white tracking-tight">
-                            ₹5,000
+                    <div className="flex-1">
+                        <h2 className="text-2xl font-bold text-white mb-1">Win Prizes Worth ₹5,000</h2>
+                        <p className="text-white/70 text-sm">
+                            Every contribution earns 10 points. Climb the leaderboard and help your peers along the way.
                         </p>
                     </div>
-                    <p className="text-base md:text-lg text-gray-300 max-w-2xl mx-auto mb-4">
-                        Contribute questions, help your peers, and climb the leaderboard to win amazing rewards
-                    </p>
-                    <p className="text-sm text-gray-400 flex justify-center items-center gap-2">
-                        Special thanks to{' '}
-                        <a
-                            href="https://linkedin.com/in/pranav-singh-developer/"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-emerald-400 hover:text-emerald-300 underline font-medium"
-                        >
-                            Pranav Singh
-                        </a>
-                        &
-                        <a
-                            href="https://linkedin.com/in/codernsingh"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-emerald-400 hover:text-emerald-300 underline font-medium"
-                        >
-                            Narendra Singh
-                        </a>
-                        &
-                        <a
-                            href="https://www.linkedin.com/in/keshavrajput/"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-emerald-400 hover:text-emerald-300 underline font-medium"
-                        >
-                            Keshav
-                        </a>
-
-                        &
-                        <a
-                            href="https://www.linkedin.com/in/abhijeet-kumar79/"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-emerald-400 hover:text-emerald-300 underline font-medium"
-                        >
-                            Abhijeet Kumar
-                        </a>
-
-                    </p>
-                    {/* <div className="flex flex-wrap justify-center gap-4 md:gap-8">
-                        <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full border border-white/20">
-                            <Star className="w-5 h-5 text-yellow-400" />
-                            <span className="text-sm text-white font-medium">10 points per question</span>
-                        </div>
-                        <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full border border-white/20">
-                            <Award className="w-5 h-5 text-emerald-400" />
-                            <span className="text-sm text-white font-medium">Monthly rewards</span>
-                        </div>
-                        <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full border border-white/20">
-                            <TrendingUp className="w-5 h-5 text-green-400" />
-                            <span className="text-sm text-white font-medium">Top 10 winners</span>
-                        </div>
-                    </div> */}
-                    <p className="text-sm text-gray-400">*Terms and Conditions Apply</p>
+                    <p className="text-xs text-white/50 shrink-0">*Terms and Conditions Apply</p>
                 </div>
             </div>
 
@@ -246,12 +192,12 @@ const ContributePage: React.FC = () => {
             <div className="mb-8">
                 <button
                     onClick={() => setShowAIUpload(true)}
-                    className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-4 px-6 rounded-lg transition-all shadow-md hover:shadow-lg flex items-center justify-center gap-3"
+                    className="w-full bg-white border border-gray-200 hover:border-brand-300 text-gray-800 font-semibold py-4 px-6 rounded-xl transition-all flex items-center justify-center gap-3"
                 >
-                    <Brain className="w-6 h-6" />
+                    <Brain className="w-5 h-5 text-brand-600" />
                     <span className="text-base">Contribute to AI Model Training</span>
                 </button>
-                <p className="text-sm text-gray-600 mt-2 text-center">
+                <p className="text-sm text-gray-500 mt-2 text-center">
                     Help us build a smarter learning assistant by uploading course materials
                 </p>
             </div>
@@ -259,135 +205,186 @@ const ContributePage: React.FC = () => {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Contribution Form */}
                 <div className="lg:col-span-2">
-                    <div className="bg-white rounded-xl shadow-lg p-8">
-                        <h2 className="text-2xl font-bold text-gray-900 mb-6">
+                    <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-8">
+                        <h2 className="text-2xl font-bold text-gray-900 mb-1">
                             Contribute a Question
                         </h2>
+                        <p className="text-sm text-gray-500 mb-6">Add a question and help other students find it later.</p>
 
                         {success && (
-                            <div className="mb-6 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg">
-                                ✅ Question contributed successfully! You earned 10 points!
+                            <div className="mb-6 bg-emerald-50 border border-emerald-200 text-emerald-700 px-4 py-3 rounded-lg text-sm font-medium">
+                                Question contributed successfully! You earned 10 points!
                             </div>
                         )}
 
-                        <form onSubmit={handleSubmit} className="space-y-6">
-                            {/* Campus Selection */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Campus *
-                                </label>
-                                <select
-                                    name="campusSlug"
-                                    value={formData.campusSlug}
-                                    onChange={handleChange}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                                    required
-                                >
-                                    <option value="">Select Campus</option>
-                                    {campuses.map((campus) => (
-                                        <option key={campus.id} value={campus.slug}>
-                                            {campus.name}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
+                        {/* College / Others mode switch */}
+                        <div className="flex items-center gap-1 bg-gray-100 rounded-full p-1 mb-6 w-fit">
+                            <button
+                                type="button"
+                                onClick={() => setMode('college')}
+                                className={`flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-full transition-colors ${
+                                    mode === 'college' ? 'bg-white shadow-sm text-brand-700' : 'text-gray-500 hover:text-gray-700'
+                                }`}
+                            >
+                                <GraduationCap className="w-4 h-4" /> College
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setMode('others')}
+                                className={`flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-full transition-colors ${
+                                    mode === 'others' ? 'bg-white shadow-sm text-brand-700' : 'text-gray-500 hover:text-gray-700'
+                                }`}
+                            >
+                                <Sparkles className="w-4 h-4" /> Others
+                            </button>
+                        </div>
 
-                            {/* Semester Selection - Conditional */}
-                            {!isCustomCourse ? (
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Semester *
-                                    </label>
-                                    <select
-                                        name="semester"
-                                        value={formData.semester}
-                                        onChange={handleChange}
-                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                                        required
-                                    >
-                                        <option value="">Select Semester</option>
-                                        {[1, 2, 3, 4, 5, 6, 7, 8].map((sem) => (
-                                            <option key={sem} value={sem}>
-                                                Semester {sem}
-                                            </option>
-                                        ))}
-                                    </select>
+                        <form onSubmit={handleSubmit} className="space-y-5">
+                            {mode === 'college' ? (
+                                <div className="grid sm:grid-cols-2 gap-5">
+                                    {/* Campus Selection */}
+                                    <div>
+                                        <label className="flex items-center gap-1.5 text-sm font-medium text-gray-700 mb-2">
+                                            <GraduationCap className="w-3.5 h-3.5 text-gray-400" /> Campus *
+                                        </label>
+                                        <select
+                                            name="campusSlug"
+                                            value={formData.campusSlug}
+                                            onChange={handleChange}
+                                            className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-transparent bg-gray-50"
+                                            required
+                                        >
+                                            <option value="">Select Campus</option>
+                                            {campuses.map((campus) => (
+                                                <option key={campus.id} value={campus.slug}>
+                                                    {campus.name}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                    {/* Semester Selection */}
+                                    <div>
+                                        <label className="flex items-center gap-1.5 text-sm font-medium text-gray-700 mb-2">
+                                            <Layers className="w-3.5 h-3.5 text-gray-400" /> Semester *
+                                        </label>
+                                        <select
+                                            name="semester"
+                                            value={formData.semester}
+                                            onChange={handleChange}
+                                            className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-transparent bg-gray-50"
+                                            required
+                                        >
+                                            <option value="">Select Semester</option>
+                                            {[1, 2, 3, 4, 5, 6, 7, 8].map((sem) => (
+                                                <option key={sem} value={sem}>
+                                                    Semester {sem}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
                                 </div>
                             ) : (
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Semester
+                                    <label className="flex items-center gap-1.5 text-sm font-medium text-gray-700 mb-2">
+                                        <Sparkles className="w-3.5 h-3.5 text-gray-400" /> Course *
                                     </label>
-                                    <div className="w-full px-4 py-2 border border-gray-200 rounded-lg bg-gradient-to-r from-purple-50 to-pink-50">
-                                        <span className="text-purple-700 font-medium flex items-center gap-2">
-                                            🎯 No Semester (default) - Custom Course
-                                        </span>
-                                    </div>
-                                    <p className="text-xs text-gray-500 mt-1">
-                                        This campus uses a custom course structure without semesters
+                                    {courseOptions.length === 0 ? (
+                                        <p className="text-sm text-gray-500 bg-gray-50 border border-gray-200 rounded-xl px-4 py-3">
+                                            No courses are open yet - ask an admin to add one from the admin dashboard.
+                                        </p>
+                                    ) : (
+                                        <select
+                                            name="customCourse"
+                                            value={formData.customCourse}
+                                            onChange={handleChange}
+                                            className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-transparent bg-gray-50"
+                                            required
+                                        >
+                                            <option value="">Select a course</option>
+                                            {courseOptions.map((course) => (
+                                                <option key={course} value={course}>
+                                                    {course}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    )}
+                                    <p className="text-xs text-gray-400 mt-1.5">
+                                        No semester needed - questions are grouped by course instead.
                                     </p>
                                 </div>
                             )}
 
                             {/* Question Name */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Question Title *
+                                <label className="flex items-center gap-1.5 text-sm font-medium text-gray-700 mb-2">
+                                    <BookOpen className="w-3.5 h-3.5 text-gray-400" /> Question Title *
                                 </label>
                                 <input
                                     type="text"
                                     name="questionName"
                                     value={formData.questionName}
                                     onChange={handleChange}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                                    className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-transparent bg-gray-50"
                                     placeholder="e.g., Data Structures Assignment 1"
                                     required
                                 />
                             </div>
 
-                            {/* Subject */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Subject *
-                                </label>
-                                <input
-                                    type="text"
-                                    name="subject"
-                                    value={formData.subject}
-                                    onChange={handleChange}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                                    placeholder="e.g., Data Structures"
-                                    required
-                                />
-                            </div>
+                            <div className="grid sm:grid-cols-2 gap-5">
+                                {/* Subject */}
+                                <div>
+                                    <label className="flex items-center gap-1.5 text-sm font-medium text-gray-700 mb-2">
+                                        <Tag className="w-3.5 h-3.5 text-gray-400" /> Subject *
+                                    </label>
+                                    <input
+                                        type="text"
+                                        name="subject"
+                                        list="existing-subjects"
+                                        value={formData.subject}
+                                        onChange={handleChange}
+                                        className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-transparent bg-gray-50"
+                                        placeholder="e.g., Data Structures"
+                                        required
+                                    />
+                                    <datalist id="existing-subjects">
+                                        {subjectOptions.map((s) => (
+                                            <option key={s} value={s} />
+                                        ))}
+                                    </datalist>
+                                    <p className="text-[11px] text-gray-400 mt-1.5">
+                                        Pick an existing subject if it's already there to avoid duplicates.
+                                    </p>
+                                </div>
 
-                            {/* Topic */}
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Topic *
-                                </label>
-                                <input
-                                    type="text"
-                                    name="topic"
-                                    value={formData.topic}
-                                    onChange={handleChange}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
-                                    placeholder="e.g., Arrays and Linked Lists"
-                                    required
-                                />
+                                {/* Topic */}
+                                <div>
+                                    <label className="flex items-center gap-1.5 text-sm font-medium text-gray-700 mb-2">
+                                        <Tag className="w-3.5 h-3.5 text-gray-400" /> Topic *
+                                    </label>
+                                    <input
+                                        type="text"
+                                        name="topic"
+                                        value={formData.topic}
+                                        onChange={handleChange}
+                                        className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-transparent bg-gray-50"
+                                        placeholder="e.g., Arrays and Linked Lists"
+                                        required
+                                    />
+                                </div>
                             </div>
 
                             {/* Link */}
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">
-                                    Link to Question *
+                                <label className="flex items-center gap-1.5 text-sm font-medium text-gray-700 mb-2">
+                                    <Link2 className="w-3.5 h-3.5 text-gray-400" /> Link to Question *
                                 </label>
                                 <input
                                     type="url"
                                     name="link"
                                     value={formData.link}
                                     onChange={handleChange}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent"
+                                    className="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-brand-500 focus:border-transparent bg-gray-50"
                                     placeholder="https://..."
                                     required
                                 />
@@ -401,11 +398,11 @@ const ContributePage: React.FC = () => {
                                 <input
                                     type="email"
                                     value={user?.email || ''}
-                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 cursor-not-allowed"
+                                    className="w-full px-4 py-2.5 border border-gray-200 rounded-xl bg-gray-100 text-gray-500 cursor-not-allowed"
                                     readOnly
                                     disabled
                                 />
-                                <p className="text-xs text-gray-500 mt-1">
+                                <p className="text-xs text-gray-400 mt-1.5">
                                     Your email will be shown as the contributor
                                 </p>
                             </div>
@@ -414,7 +411,7 @@ const ContributePage: React.FC = () => {
                             <button
                                 type="submit"
                                 disabled={loading}
-                                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 px-6 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                                className="w-full bg-brand-600 hover:bg-brand-700 text-white font-bold py-3 px-6 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                             >
                                 {loading ? (
                                     <>
@@ -431,9 +428,9 @@ const ContributePage: React.FC = () => {
 
                 {/* Leaderboard */}
                 <div className="lg:col-span-1">
-                    <div className="bg-white rounded-xl shadow-lg p-6 sticky top-6">
-                        <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-                            <Trophy className="w-6 h-6 text-yellow-500" />
+                    <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-6 sticky top-6">
+                        <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                            <Trophy className="w-5 h-5 text-yellow-500" />
                             Top Contributors
                         </h3>
 
@@ -441,12 +438,12 @@ const ContributePage: React.FC = () => {
                             {leaderboard.map((entry) => (
                                 <div
                                     key={entry.rank}
-                                    className={`flex items-center gap-3 p-3 rounded-lg ${entry.rank <= 3
+                                    className={`flex items-center gap-3 p-3 rounded-xl ${entry.rank <= 3
                                         ? 'bg-gradient-to-r from-yellow-50 to-orange-50 border border-yellow-200'
                                         : 'bg-gray-50'
                                         }`}
                                 >
-                                    <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center font-bold ${entry.rank === 1 ? 'bg-yellow-400 text-white' :
+                                    <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${entry.rank === 1 ? 'bg-yellow-400 text-white' :
                                         entry.rank === 2 ? 'bg-gray-300 text-white' :
                                             entry.rank === 3 ? 'bg-orange-400 text-white' :
                                                 'bg-gray-200 text-gray-600'
@@ -457,18 +454,19 @@ const ContributePage: React.FC = () => {
                                         <img
                                             src={entry.picture}
                                             alt={entry.name}
-                                            className="w-10 h-10 rounded-full"
+                                            referrerPolicy="no-referrer"
+                                            className="w-9 h-9 rounded-full"
                                         />
                                     ) : (
-                                        <div className="w-10 h-10 rounded-full bg-purple-200 flex items-center justify-center text-emerald-700 font-semibold">
+                                        <div className="w-9 h-9 rounded-full bg-brand-100 flex items-center justify-center text-brand-700 font-semibold text-sm">
                                             {entry.name.charAt(0)}
                                         </div>
                                     )}
                                     <div className="flex-1 min-w-0">
-                                        <p className="font-semibold text-gray-900 truncate">
+                                        <p className="font-semibold text-gray-900 text-sm truncate">
                                             {entry.name}
                                         </p>
-                                        <p className="text-sm text-gray-600">
+                                        <p className="text-xs text-gray-500">
                                             {entry.contributionPoints} points
                                         </p>
                                     </div>

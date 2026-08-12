@@ -8,6 +8,10 @@ import authRoutes from './routes/auth.js';
 import courseRoutes from './routes/courses.js';
 import campusRoutes from './routes/campuses.js';
 import contributionRoutes from './routes/contributions.js';
+import communityRoutes from './routes/community.js';
+import imagekitRoutes from './routes/imagekit.js';
+import groupRoutes from './routes/groups.js';
+import adminRoutes from './routes/admin.js';
 
 dotenv.config();
 
@@ -48,6 +52,10 @@ app.use('/api/questions', questionRoutes);
 app.use('/api/notices', noticeRoutes);
 app.use('/api/courses', courseRoutes);
 app.use('/api/contributions', contributionRoutes);
+app.use('/api/community', communityRoutes);
+app.use('/api/imagekit', imagekitRoutes);
+app.use('/api/groups', groupRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

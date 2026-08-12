@@ -62,7 +62,7 @@ const GlobalSearch: React.FC = () => {
                     onChange={(e) => setQuery(e.target.value)}
                     onFocus={() => setOpen(true)}
                     placeholder="Search questions..."
-                    className="bg-gray-50 border border-gray-200 rounded-full py-1.5 pl-9 pr-4 text-sm focus:outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 w-64 transition-colors"
+                    className="bg-gray-50 border border-gray-200 rounded-full py-1.5 pl-9 pr-4 text-sm focus:outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-400 w-64 transition-colors"
                 />
                 {loading && <Loader2 className="w-3.5 h-3.5 text-gray-400 animate-spin absolute right-3" />}
             </div>

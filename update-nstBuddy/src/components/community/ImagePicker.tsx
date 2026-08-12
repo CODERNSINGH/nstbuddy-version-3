@@ -120,7 +120,7 @@ const ImagePicker: React.FC<ImagePickerProps> = ({ idToken, images, onChange }) 
                     type="button"
                     onClick={() => inputRef.current?.click()}
                     disabled={!idToken || remainingSlots <= 0}
-                    className="flex items-center gap-1.5 text-xs font-semibold text-emerald-600 hover:text-emerald-700 disabled:text-gray-300 disabled:cursor-not-allowed"
+                    className="flex items-center gap-1.5 text-xs font-semibold text-brand-600 hover:text-brand-700 disabled:text-gray-300 disabled:cursor-not-allowed"
                 >
                     <ImagePlus className="w-4 h-4" />
                     {images.length + pending.length === 0 ? 'Add photos' : `Add more (${remainingSlots} left)`}
