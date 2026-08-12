@@ -302,6 +302,111 @@ export const communityApi = {
     },
 };
 
+// Groups API - bounded-capacity groups (e.g. hackathon teams) with contact-info sharing
+export type ContactMethod = 'phone' | 'whatsapp' | 'email';
+
+export interface GroupSummary {
+    id: string;
+    name: string;
+    description: string;
+    category: string | null;
+    capacity: number;
+    memberCount: number;
+    isFull: boolean;
+    isActive: boolean;
+    creator: CommunityAuthor;
+    isMine: boolean;
+    isMember: boolean;
+    createdAt: string;
+}
+
+export interface GroupMemberInfo {
+    id: string;
+    name: string;
+    email: string;
+    picture?: string | null;
+    role: 'admin' | 'member';
+    joinedAt: string;
+    contact: { method: ContactMethod; value: string } | null;
+}
+
+export interface GroupDetail extends GroupSummary {
+    members: GroupMemberInfo[];
+}
+
+export const groupsApi = {
+    getAll: async (idToken?: string, params: { search?: string; category?: string; limit?: number } = {}) => {
+        const response = await api.get('/groups', {
+            params,
+            headers: idToken ? { Authorization: `Bearer ${idToken}` } : {},
+        });
+        return response.data;
+    },
+
+    getMy: async (idToken: string) => {
+        const response = await api.get('/groups/my', {
+            headers: { Authorization: `Bearer ${idToken}` },
+        });
+        return response.data;
+    },
+
+    getById: async (id: string, idToken?: string) => {
+        const response = await api.get(`/groups/${id}`, {
+            headers: idToken ? { Authorization: `Bearer ${idToken}` } : {},
+        });
+        return response.data;
+    },
+
+    create: async (
+        data: { name: string; description: string; category?: string; capacity: number; contactMethod: ContactMethod; contactValue: string },
+        idToken: string
+    ) => {
+        const response = await api.post('/groups', data, {
+            headers: { Authorization: `Bearer ${idToken}` },
+        });
+        return response.data;
+    },
+
+    update: async (
+        id: string,
+        data: { name: string; description: string; category?: string; capacity: number; isActive: boolean },
+        idToken: string
+    ) => {
+        const response = await api.put(`/groups/${id}`, data, {
+            headers: { Authorization: `Bearer ${idToken}` },
+        });
+        return response.data;
+    },
+
+    remove: async (id: string, idToken: string) => {
+        const response = await api.delete(`/groups/${id}`, {
+            headers: { Authorization: `Bearer ${idToken}` },
+        });
+        return response.data;
+    },
+
+    join: async (id: string, data: { contactMethod: ContactMethod; contactValue: string }, idToken: string) => {
+        const response = await api.post(`/groups/${id}/join`, data, {
+            headers: { Authorization: `Bearer ${idToken}` },
+        });
+        return response.data;
+    },
+
+    leave: async (id: string, idToken: string) => {
+        const response = await api.post(`/groups/${id}/leave`, {}, {
+            headers: { Authorization: `Bearer ${idToken}` },
+        });
+        return response.data;
+    },
+
+    removeMember: async (id: string, memberId: string, idToken: string) => {
+        const response = await api.delete(`/groups/${id}/members/${memberId}`, {
+            headers: { Authorization: `Bearer ${idToken}` },
+        });
+        return response.data;
+    },
+};
+
 // Auth API
 export const authApi = {
     login: async (email: string, uniqueKey: string) => {

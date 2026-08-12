@@ -15,6 +15,8 @@ import SemesterSelection from './pages/SemesterSelection';
 import Questions from './pages/Questions';
 import ContributePage from './pages/ContributePage';
 import Community from './pages/Community';
+import Groups from './pages/Groups';
+import GroupDetail from './pages/GroupDetail';
 import UserProfile from './pages/UserProfile';
 import AdminDashboard from './pages/AdminDashboard';
 import Days100 from './pages/Days100';
@@ -39,6 +41,8 @@ const AppRoutes: React.FC = () => {
       <Route path="/campus/:campusSlug/semester/:semesterId" element={<ProtectedRoute><Questions /></ProtectedRoute>} />
       <Route path="/contribute" element={<ProtectedRoute><ContributePage /></ProtectedRoute>} />
       <Route path="/community" element={<ProtectedRoute><Community /></ProtectedRoute>} />
+      <Route path="/groups" element={<ProtectedRoute><Groups /></ProtectedRoute>} />
+      <Route path="/groups/:groupId" element={<ProtectedRoute><GroupDetail /></ProtectedRoute>} />
       <Route path="/profile" element={<ProtectedRoute><UserProfile /></ProtectedRoute>} />
       <Route path="/100days" element={<ProtectedRoute><Days100 /></ProtectedRoute>} />
       <Route path="/extension-install" element={<ProtectedRoute><ExtensionInstall /></ProtectedRoute>} />

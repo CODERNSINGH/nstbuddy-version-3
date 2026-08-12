@@ -4,6 +4,7 @@ import Layout from '../components/layout/Layout';
 import { useAuth } from '../contexts/AuthContext';
 import { auth } from '../config/firebase';
 import PostCard from '../components/community/PostCard';
+import GroupCard from '../components/groups/GroupCard';
 import {
     Trophy,
     TrendingUp,
@@ -19,8 +20,9 @@ import {
     Crown,
     Heart,
     PenSquare,
+    Users2,
 } from 'lucide-react';
-import { contributionsApi, communityApi, CommunityPost } from '../services/api';
+import { contributionsApi, communityApi, groupsApi, CommunityPost, GroupSummary } from '../services/api';
 
 interface ContributionStats {
     name: string;
@@ -42,6 +44,8 @@ interface ContributionStats {
     }>;
 }
 
+type Tab = 'contributions' | 'posts' | 'groups';
+
 const rankBadge = (rank: number) => {
     if (rank === 1) return { gradient: 'from-yellow-400 to-orange-400', Icon: Trophy, text: 'Campus Champion' };
     if (rank === 2) return { gradient: 'from-gray-300 to-gray-400', Icon: Medal, text: 'Runner-up' };
@@ -55,15 +59,20 @@ const UserProfile: React.FC = () => {
     const navigate = useNavigate();
     const [stats, setStats] = useState<ContributionStats | null>(null);
     const [loading, setLoading] = useState(true);
+    const [tab, setTab] = useState<Tab>('contributions');
+
     const [posts, setPosts] = useState<CommunityPost[]>([]);
     const [postsLoading, setPostsLoading] = useState(true);
     const [likesGiven, setLikesGiven] = useState<number | null>(null);
-    const [repliesGiven, setRepliesGiven] = useState<number | null>(null);
+
+    const [groups, setGroups] = useState<GroupSummary[]>([]);
+    const [groupsLoading, setGroupsLoading] = useState(true);
 
     useEffect(() => {
         if (user) {
             fetchMyStats();
             fetchMyPosts();
+            fetchMyGroups();
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [user]);
@@ -72,13 +81,9 @@ const UserProfile: React.FC = () => {
         try {
             const firebaseUser = auth.currentUser;
             if (!firebaseUser) return;
-
             const token = await firebaseUser.getIdToken();
             const response = await contributionsApi.getMyStats(token);
-
-            if (response.success) {
-                setStats(response.stats);
-            }
+            if (response.success) setStats(response.stats);
         } catch (error) {
             // Error fetching stats silently
         } finally {
@@ -90,22 +95,31 @@ const UserProfile: React.FC = () => {
         try {
             const firebaseUser = auth.currentUser;
             if (!firebaseUser || !user) return;
-
             const token = await firebaseUser.getIdToken();
             const [postsResponse, activityResponse] = await Promise.all([
                 communityApi.getPosts(token, { author: user.email, limit: 10 }),
                 communityApi.getMyActivity(token),
             ]);
-
             if (postsResponse.success) setPosts(postsResponse.posts);
-            if (activityResponse.success) {
-                setLikesGiven(activityResponse.activity.likeCount);
-                setRepliesGiven(activityResponse.activity.commentCount);
-            }
+            if (activityResponse.success) setLikesGiven(activityResponse.activity.likeCount);
         } catch (error) {
             // Error fetching posts silently
         } finally {
             setPostsLoading(false);
+        }
+    };
+
+    const fetchMyGroups = async () => {
+        try {
+            const firebaseUser = auth.currentUser;
+            if (!firebaseUser) return;
+            const token = await firebaseUser.getIdToken();
+            const response = await groupsApi.getMy(token);
+            if (response.success) setGroups(response.groups);
+        } catch (error) {
+            // Error fetching groups silently
+        } finally {
+            setGroupsLoading(false);
         }
     };
 
@@ -150,245 +164,256 @@ const UserProfile: React.FC = () => {
     const badge = rankBadge(stats.rank);
     const BadgeIcon = badge.Icon;
 
+    const statRows = [
+        { label: 'Questions contributed', value: stats.contributionCount, icon: BookOpen },
+        { label: 'Points earned', value: stats.contributionPoints, icon: Trophy },
+        { label: 'Leaderboard rank', value: `#${stats.rank}`, icon: TrendingUp },
+        { label: 'Community posts', value: postsLoading ? '–' : posts.length, icon: PenSquare },
+        { label: 'Likes given', value: likesGiven ?? '–', icon: Heart },
+        { label: 'Groups', value: groupsLoading ? '–' : groups.length, icon: Users2 },
+    ];
+
     return (
-        <Layout>
-            <div className="relative -mt-2 mb-8 rounded-3xl overflow-hidden">
-                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-emerald-100/60 via-transparent to-transparent -z-10"></div>
-
-                <div className="bg-white border border-gray-100 rounded-3xl shadow-sm p-8">
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-6">
-                        <div className="relative shrink-0">
-                            {stats.picture ? (
-                                <img
-                                    src={stats.picture}
-                                    alt={stats.name}
-                                    referrerPolicy="no-referrer"
-                                    className="w-24 h-24 rounded-full object-cover border-4 border-white shadow-md ring-2 ring-emerald-100"
-                                />
-                            ) : (
-                                <div className="w-24 h-24 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 font-bold text-4xl border-4 border-white shadow-md ring-2 ring-emerald-100">
-                                    {stats.name.charAt(0)}
-                                </div>
-                            )}
-                            <span className={`absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-gradient-to-br ${badge.gradient} flex items-center justify-center border-2 border-white shadow-sm`}>
-                                <BadgeIcon className="w-4 h-4 text-white" />
-                            </span>
-                        </div>
-
-                        <div className="flex-1">
-                            <h1 className="text-2xl font-bold text-gray-900">{stats.name}</h1>
-                            <p className="text-gray-500 text-sm mb-3">{stats.email}</p>
-                            <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gradient-to-r ${badge.gradient} text-white text-sm font-semibold shadow-sm`}>
-                                Rank #{stats.rank} · {badge.text}
-                            </div>
-                        </div>
-
-                        <button
-                            onClick={() => navigate('/contribute')}
-                            className="hidden sm:flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm py-2.5 px-5 rounded-full transition-colors shrink-0"
-                        >
-                            Contribute <ArrowRight className="w-4 h-4" />
-                        </button>
-                    </div>
+        <Layout fullWidth>
+            <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
+                {/* Banner + overlapping avatar */}
+                <div className="relative h-36 sm:h-44 rounded-3xl overflow-hidden -mx-px">
+                    <div className="absolute inset-0 bg-[#0d1f17]" />
+                    <div className="absolute top-0 right-0 w-80 h-80 bg-emerald-500 rounded-full blur-[100px] opacity-40 -mr-24 -mt-24" />
+                    <div className="absolute bottom-0 left-1/3 w-64 h-64 bg-teal-400 rounded-full blur-[90px] opacity-20 -mb-32" />
                 </div>
-            </div>
 
-            {/* Stats Grid */}
-            <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
-                <div className="bg-white border border-gray-100 shadow-sm rounded-2xl p-6">
-                    <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center mb-4">
-                        <BookOpen className="w-5 h-5 text-emerald-600" />
-                    </div>
-                    <div className="text-3xl font-bold text-gray-900">{stats.contributionCount}</div>
-                    <div className="text-sm text-gray-500 mt-1">Questions</div>
-                </div>
-                <div className="bg-white border border-gray-100 shadow-sm rounded-2xl p-6">
-                    <div className="w-10 h-10 rounded-xl bg-yellow-50 flex items-center justify-center mb-4">
-                        <Trophy className="w-5 h-5 text-yellow-500" />
-                    </div>
-                    <div className="text-3xl font-bold text-gray-900">{stats.contributionPoints}</div>
-                    <div className="text-sm text-gray-500 mt-1">Points</div>
-                </div>
-                <div className="bg-white border border-gray-100 shadow-sm rounded-2xl p-6">
-                    <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center mb-4">
-                        <TrendingUp className="w-5 h-5 text-emerald-600" />
-                    </div>
-                    <div className="text-3xl font-bold text-gray-900">#{stats.rank}</div>
-                    <div className="text-sm text-gray-500 mt-1">Rank</div>
-                </div>
-                <div className="bg-white border border-gray-100 shadow-sm rounded-2xl p-6">
-                    <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center mb-4">
-                        <PenSquare className="w-5 h-5 text-emerald-600" />
-                    </div>
-                    <div className="text-3xl font-bold text-gray-900">{postsLoading ? '–' : posts.length}</div>
-                    <div className="text-sm text-gray-500 mt-1">Posts</div>
-                </div>
-                <div className="bg-white border border-gray-100 shadow-sm rounded-2xl p-6">
-                    <div className="w-10 h-10 rounded-xl bg-rose-50 flex items-center justify-center mb-4">
-                        <Heart className="w-5 h-5 text-rose-500" />
-                    </div>
-                    <div className="text-3xl font-bold text-gray-900">{likesGiven ?? '–'}</div>
-                    <div className="text-sm text-gray-500 mt-1">Likes given</div>
-                </div>
-            </div>
-
-            {/* Achievements */}
-            <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-6 mb-8">
-                <h3 className="font-bold text-gray-900 flex items-center gap-2 mb-5">
-                    <Award className="w-5 h-5 text-emerald-600" />
-                    Achievements
-                </h3>
-                {stats.contributionCount === 0 ? (
-                    <p className="text-sm text-gray-400">Contribute a question to start unlocking achievements.</p>
-                ) : (
-                    <div className="flex flex-wrap gap-3">
-                        {stats.contributionCount >= 1 && (
-                            <div className="flex items-center gap-2 bg-emerald-50 text-emerald-800 text-sm font-medium px-4 py-2 rounded-full">
-                                <Target className="w-4 h-4" /> First Contribution
-                            </div>
-                        )}
-                        {stats.contributionCount >= 5 && (
-                            <div className="flex items-center gap-2 bg-emerald-50 text-emerald-800 text-sm font-medium px-4 py-2 rounded-full">
-                                <Star className="w-4 h-4" /> Rising Star · 5+
-                            </div>
-                        )}
-                        {stats.contributionCount >= 10 && (
-                            <div className="flex items-center gap-2 bg-emerald-50 text-emerald-800 text-sm font-medium px-4 py-2 rounded-full">
-                                <Rocket className="w-4 h-4" /> Power Contributor · 10+
-                            </div>
-                        )}
-                        {stats.rank <= 10 && (
-                            <div className="flex items-center gap-2 bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-sm font-medium px-4 py-2 rounded-full">
-                                <Crown className="w-4 h-4" /> Top 10
-                            </div>
-                        )}
-                    </div>
-                )}
-            </div>
-
-            {/* Recent Contributions */}
-            <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-6 mb-8">
-                <h3 className="font-bold text-gray-900 mb-5">Recent Contributions</h3>
-                {stats.recentContributions.length === 0 ? (
-                    <div className="text-center py-10">
-                        <BookOpen className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-                        <p className="text-gray-500 text-sm mb-4">No contributions yet</p>
-                        <button
-                            onClick={() => navigate('/contribute')}
-                            className="bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold py-2 px-5 rounded-full transition-colors"
-                        >
-                            Make Your First Contribution
-                        </button>
-                    </div>
-                ) : (
-                    <div className="space-y-3">
-                        {stats.recentContributions.map((contribution) => (
-                            <div
-                                key={contribution.id}
-                                className="flex items-center justify-between gap-4 p-4 bg-gray-50 rounded-xl border border-gray-100 hover:border-emerald-200 transition-colors"
-                            >
-                                <div className="min-w-0">
-                                    <h4 className="font-semibold text-gray-900 text-sm truncate mb-1.5">
-                                        {contribution.questionName}
-                                    </h4>
-                                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500">
-                                        <span>{contribution.campus.name}</span>
-                                        <span>·</span>
-                                        <span>Semester {contribution.semester}</span>
-                                        <span>·</span>
-                                        <span className="flex items-center gap-1">
-                                            <Calendar className="w-3 h-3" />
-                                            {new Date(contribution.createdAt).toLocaleDateString('en-IN', {
-                                                day: 'numeric',
-                                                month: 'short',
-                                                year: 'numeric',
-                                            })}
-                                        </span>
+                <div className="px-2 sm:px-4">
+                    <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 -mt-12 sm:-mt-14 mb-8">
+                        <div className="flex items-end gap-4">
+                            <div className="relative shrink-0">
+                                {stats.picture ? (
+                                    <img
+                                        src={stats.picture}
+                                        alt={stats.name}
+                                        referrerPolicy="no-referrer"
+                                        className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl object-cover border-4 border-white shadow-md"
+                                    />
+                                ) : (
+                                    <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl bg-emerald-100 flex items-center justify-center text-emerald-700 font-bold text-4xl border-4 border-white shadow-md">
+                                        {stats.name.charAt(0)}
                                     </div>
-                                </div>
-                                <span
-                                    className={`shrink-0 px-3 py-1 rounded-full text-xs font-semibold ${
-                                        contribution.isApproved
-                                            ? 'bg-emerald-100 text-emerald-700'
-                                            : 'bg-gray-100 text-gray-600'
-                                    }`}
-                                >
-                                    {contribution.isApproved ? 'Live' : 'Pending'}
+                                )}
+                                <span className={`absolute -bottom-2 -right-2 w-9 h-9 rounded-xl bg-gradient-to-br ${badge.gradient} flex items-center justify-center border-2 border-white shadow-sm`}>
+                                    <BadgeIcon className="w-4.5 h-4.5 text-white" />
                                 </span>
                             </div>
-                        ))}
-                    </div>
-                )}
-            </div>
+                            <div className="pb-1">
+                                <h1 className="text-2xl font-bold text-gray-900">{stats.name}</h1>
+                                <p className="text-gray-500 text-sm">{stats.email}</p>
+                            </div>
+                        </div>
 
-            {/* Community Posts */}
-            <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-6 mb-8">
-                <div className="flex items-center justify-between mb-5">
-                    <h3 className="font-bold text-gray-900 flex items-center gap-2">
-                        <MessageSquare className="w-5 h-5 text-emerald-600" />
-                        Community Posts
-                    </h3>
-                    {posts.length > 0 && (
-                        <button
-                            onClick={() => navigate(`/community?author=${encodeURIComponent(stats.email)}&authorName=${encodeURIComponent(stats.name)}`)}
-                            className="text-xs font-semibold text-emerald-600 hover:text-emerald-700"
-                        >
-                            View all
-                        </button>
-                    )}
-                </div>
+                        <div className="flex items-center gap-3 pb-1">
+                            <span className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-gradient-to-r ${badge.gradient} text-white text-xs font-semibold shadow-sm`}>
+                                Rank #{stats.rank} · {badge.text}
+                            </span>
+                            <button
+                                onClick={() => navigate('/contribute')}
+                                className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm py-2 px-4 rounded-full transition-colors shrink-0"
+                            >
+                                Contribute <ArrowRight className="w-3.5 h-3.5" />
+                            </button>
+                        </div>
+                    </div>
 
-                {postsLoading ? (
-                    <div className="flex items-center justify-center py-10">
-                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-emerald-600"></div>
-                    </div>
-                ) : posts.length === 0 ? (
-                    <div className="text-center py-10">
-                        <MessageSquare className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-                        <p className="text-gray-500 text-sm mb-4">You haven't posted in the Community yet</p>
-                        <button
-                            onClick={() => navigate('/community')}
-                            className="bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold py-2 px-5 rounded-full transition-colors"
-                        >
-                            Start a Post
-                        </button>
-                    </div>
-                ) : (
-                    <div className="space-y-3">
-                        {posts.slice(0, 5).map((post) => (
-                            <PostCard
-                                key={post.id}
-                                post={post}
-                                onUpdated={handlePostUpdated}
-                                onDeleted={handlePostDeleted}
-                                onHashtagClick={handleHashtagClick}
-                            />
-                        ))}
-                    </div>
-                )}
-            </div>
+                    <div className="grid grid-cols-1 lg:grid-cols-[280px_minmax(0,1fr)] gap-6 items-start">
+                        {/* Sidebar */}
+                        <aside className="space-y-4 lg:sticky lg:top-20">
+                            <div className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden">
+                                {statRows.map((row, i) => (
+                                    <div
+                                        key={row.label}
+                                        className={`flex items-center justify-between px-5 py-3.5 ${i !== statRows.length - 1 ? 'border-b border-gray-50' : ''}`}
+                                    >
+                                        <span className="flex items-center gap-2.5 text-sm text-gray-500">
+                                            <row.icon className="w-4 h-4 text-gray-400" />
+                                            {row.label}
+                                        </span>
+                                        <span className="font-bold text-gray-900 text-sm">{row.value}</span>
+                                    </div>
+                                ))}
+                            </div>
 
-            {/* CTA */}
-            <div className="bg-[#0d1f17] rounded-3xl p-8 relative overflow-hidden text-white">
-                <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-500 rounded-full blur-[80px] opacity-30 -mr-20 -mt-20"></div>
-                <div className="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
-                    <div>
-                        <h3 className="text-xl font-bold mb-1.5">Keep climbing the leaderboard</h3>
-                        <p className="text-sm text-white/70">Contribute more questions or join the conversation in Community.</p>
-                    </div>
-                    <div className="flex gap-3 shrink-0">
-                        <button
-                            onClick={() => navigate('/contribute')}
-                            className="flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-white font-semibold text-sm py-2.5 px-5 rounded-xl transition-colors"
-                        >
-                            Contribute <ArrowRight className="w-4 h-4" />
-                        </button>
-                        <button
-                            onClick={() => navigate('/community')}
-                            className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white font-semibold text-sm py-2.5 px-5 rounded-xl transition-colors"
-                        >
-                            <MessageSquare className="w-4 h-4" /> Community
-                        </button>
+                            <div className="bg-white border border-gray-100 rounded-2xl shadow-sm p-5">
+                                <h3 className="text-xs font-bold text-gray-500 uppercase tracking-wide mb-3">Achievements</h3>
+                                {stats.contributionCount === 0 ? (
+                                    <p className="text-xs text-gray-400">Contribute a question to unlock achievements.</p>
+                                ) : (
+                                    <div className="flex flex-wrap gap-2">
+                                        {stats.contributionCount >= 1 && (
+                                            <span className="flex items-center gap-1.5 bg-emerald-50 text-emerald-800 text-xs font-medium px-3 py-1.5 rounded-full">
+                                                <Target className="w-3.5 h-3.5" /> First Contribution
+                                            </span>
+                                        )}
+                                        {stats.contributionCount >= 5 && (
+                                            <span className="flex items-center gap-1.5 bg-emerald-50 text-emerald-800 text-xs font-medium px-3 py-1.5 rounded-full">
+                                                <Star className="w-3.5 h-3.5" /> Rising Star
+                                            </span>
+                                        )}
+                                        {stats.contributionCount >= 10 && (
+                                            <span className="flex items-center gap-1.5 bg-emerald-50 text-emerald-800 text-xs font-medium px-3 py-1.5 rounded-full">
+                                                <Rocket className="w-3.5 h-3.5" /> Power Contributor
+                                            </span>
+                                        )}
+                                        {stats.rank <= 10 && (
+                                            <span className="flex items-center gap-1.5 bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-xs font-medium px-3 py-1.5 rounded-full">
+                                                <Crown className="w-3.5 h-3.5" /> Top 10
+                                            </span>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="bg-[#0d1f17] rounded-2xl p-5 relative overflow-hidden text-white">
+                                <div className="absolute top-0 right-0 w-40 h-40 bg-emerald-500 rounded-full blur-[60px] opacity-30 -mr-14 -mt-14" />
+                                <div className="relative z-10">
+                                    <h3 className="text-sm font-bold mb-1">Keep building your standing</h3>
+                                    <p className="text-xs text-white/60 mb-4">Contribute, post, or start a group.</p>
+                                    <button
+                                        onClick={() => navigate('/groups')}
+                                        className="flex items-center gap-1.5 text-xs font-semibold bg-white/10 hover:bg-white/20 py-2 px-3.5 rounded-lg transition-colors w-full justify-center"
+                                    >
+                                        <Users2 className="w-3.5 h-3.5" /> Browse Groups
+                                    </button>
+                                </div>
+                            </div>
+                        </aside>
+
+                        {/* Main content */}
+                        <div>
+                            <div className="flex items-center gap-1 bg-white border border-gray-100 rounded-full p-1 mb-5 w-fit">
+                                {([
+                                    { id: 'contributions' as Tab, label: 'Contributions' },
+                                    { id: 'posts' as Tab, label: 'Posts' },
+                                    { id: 'groups' as Tab, label: 'Groups' },
+                                ]).map((t) => (
+                                    <button
+                                        key={t.id}
+                                        onClick={() => setTab(t.id)}
+                                        className={`text-sm font-semibold px-4 py-2 rounded-full transition-colors ${
+                                            tab === t.id ? 'bg-emerald-600 text-white' : 'text-gray-500 hover:text-gray-700'
+                                        }`}
+                                    >
+                                        {t.label}
+                                    </button>
+                                ))}
+                            </div>
+
+                            {tab === 'contributions' && (
+                                stats.recentContributions.length === 0 ? (
+                                    <div className="bg-white border border-dashed border-gray-200 rounded-2xl text-center py-14">
+                                        <BookOpen className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+                                        <p className="text-gray-500 text-sm mb-4">No contributions yet</p>
+                                        <button
+                                            onClick={() => navigate('/contribute')}
+                                            className="bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold py-2 px-5 rounded-full transition-colors"
+                                        >
+                                            Make Your First Contribution
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-3">
+                                        {stats.recentContributions.map((contribution) => (
+                                            <div
+                                                key={contribution.id}
+                                                className="flex items-center justify-between gap-4 p-4 bg-white border border-gray-100 rounded-xl hover:border-emerald-200 transition-colors"
+                                            >
+                                                <div className="min-w-0">
+                                                    <h4 className="font-semibold text-gray-900 text-sm truncate mb-1.5">
+                                                        {contribution.questionName}
+                                                    </h4>
+                                                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500">
+                                                        <span>{contribution.campus.name}</span>
+                                                        <span>·</span>
+                                                        <span>Semester {contribution.semester}</span>
+                                                        <span>·</span>
+                                                        <span className="flex items-center gap-1">
+                                                            <Calendar className="w-3 h-3" />
+                                                            {new Date(contribution.createdAt).toLocaleDateString('en-IN', {
+                                                                day: 'numeric',
+                                                                month: 'short',
+                                                                year: 'numeric',
+                                                            })}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                                <span
+                                                    className={`shrink-0 px-3 py-1 rounded-full text-xs font-semibold ${
+                                                        contribution.isApproved
+                                                            ? 'bg-emerald-100 text-emerald-700'
+                                                            : 'bg-gray-100 text-gray-600'
+                                                    }`}
+                                                >
+                                                    {contribution.isApproved ? 'Live' : 'Pending'}
+                                                </span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )
+                            )}
+
+                            {tab === 'posts' && (
+                                postsLoading ? (
+                                    <div className="flex items-center justify-center py-14">
+                                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div>
+                                    </div>
+                                ) : posts.length === 0 ? (
+                                    <div className="bg-white border border-dashed border-gray-200 rounded-2xl text-center py-14">
+                                        <MessageSquare className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+                                        <p className="text-gray-500 text-sm mb-4">You haven't posted in the Community yet</p>
+                                        <button
+                                            onClick={() => navigate('/community')}
+                                            className="bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold py-2 px-5 rounded-full transition-colors"
+                                        >
+                                            Start a Post
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-3">
+                                        {posts.map((post) => (
+                                            <PostCard
+                                                key={post.id}
+                                                post={post}
+                                                onUpdated={handlePostUpdated}
+                                                onDeleted={handlePostDeleted}
+                                                onHashtagClick={handleHashtagClick}
+                                            />
+                                        ))}
+                                    </div>
+                                )
+                            )}
+
+                            {tab === 'groups' && (
+                                groupsLoading ? (
+                                    <div className="flex items-center justify-center py-14">
+                                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div>
+                                    </div>
+                                ) : groups.length === 0 ? (
+                                    <div className="bg-white border border-dashed border-gray-200 rounded-2xl text-center py-14">
+                                        <Users2 className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+                                        <p className="text-gray-500 text-sm mb-4">You haven't joined or created any groups yet</p>
+                                        <button
+                                            onClick={() => navigate('/groups')}
+                                            className="bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-semibold py-2 px-5 rounded-full transition-colors"
+                                        >
+                                            Browse Groups
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div className="grid sm:grid-cols-2 gap-4">
+                                        {groups.map((group) => (
+                                            <GroupCard key={group.id} group={group} onClick={() => navigate(`/groups/${group.id}`)} />
+                                        ))}
+                                    </div>
+                                )
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>
