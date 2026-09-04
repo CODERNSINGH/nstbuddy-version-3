@@ -38,6 +38,19 @@ export interface Notice {
   expiresAt?: string;
 }
 
+export interface Announcement {
+  id: string;
+  title: string;
+  description: string;
+  imageUrl?: string | null;
+  link?: string | null;
+  deadline?: string | null;
+  isActive: boolean;
+  order: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Admin {
   id: string;
   email: string;

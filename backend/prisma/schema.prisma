@@ -237,6 +237,24 @@ model Notice {
   @@index([priority])
 }
 
+// Announcement Model - shown as a horizontal rail on the main page, admin-managed only
+model Announcement {
+  id          String    @id @default(cuid())
+  title       String
+  description String
+  imageUrl    String? // optional ImageKit CDN URL, blended as the card background
+  link        String? // optional URL - shown as a "Visit" button in the detail popup
+  deadline    DateTime? // optional - detail popup shows a live countdown to this
+  isActive    Boolean   @default(true)
+  order       Int       @default(0) // lower shows first; ties broken by createdAt desc
+  createdBy   String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([isActive])
+  @@index([order])
+}
+
 // Admin Model - Keep for backward compatibility (will be deprecated)
 model Admin {
   id        String   @id @default(cuid())

@@ -6,6 +6,7 @@ import { ArrowRight, Users, BookOpen, Building2, Trophy, Flame, Sparkles, Clock,
 import { formatDistanceToNow } from 'date-fns';
 import { campusesApi, contributionsApi, questionsApi, communityApi, CommunityPost } from '../services/api';
 import NoticeBoard from '../components/NoticeBoard';
+import Announcements from '../components/Announcements';
 import Avatar from '../components/community/Avatar';
 import HeroFeatureShowcase from '../components/home/HeroFeatureShowcase';
 import CountUp from '../components/home/CountUp';
@@ -44,7 +45,8 @@ interface RecentQuestion {
     subject: string;
     link: string;
     createdAt: string;
-    campus: { name: string; slug: string };
+    campus: { name: string; slug: string } | null;
+    customCourse: string | null;
 }
 
 const rankStyles: Record<number, { ring: string; badge: string }> = {
@@ -204,6 +206,7 @@ const CampusSelection: React.FC = () => {
                 </div>
 
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <Announcements />
                     <NoticeBoard />
 
                     {/* Campuses / Other Courses */}
@@ -363,7 +366,7 @@ const CampusSelection: React.FC = () => {
                                             {question.questionName}
                                         </h4>
                                         <div className="flex items-center justify-between text-xs text-gray-500">
-                                            <span>{question.campus.name}</span>
+                                            <span>{question.campus?.name ?? question.customCourse}</span>
                                             <span className="flex items-center gap-1">
                                                 <Clock className="w-3 h-3" />
                                                 {formatDistanceToNow(new Date(question.createdAt), { addSuffix: true })}

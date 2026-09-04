@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = "https://nstbuddy-version-3.onrender.com/api";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "https://nstbuddy-version-3.onrender.com/api";
 
 
 const api = axios.create({
@@ -166,6 +166,57 @@ export const noticesApi = {
 
     delete: async (id: string) => {
         const response = await api.delete(`/notices/${id}`);
+        return response.data;
+    },
+};
+
+// Announcements API - horizontal rail on the main page, admin-managed only
+export const announcementsApi = {
+    getActive: async () => {
+        const response = await api.get('/announcements');
+        return response.data;
+    },
+
+    getAll: async (idToken: string) => {
+        const response = await api.get('/announcements/all', {
+            headers: { Authorization: `Bearer ${idToken}` },
+        });
+        return response.data;
+    },
+
+    create: async (data: {
+        title: string;
+        description: string;
+        imageUrl?: string | null;
+        link?: string | null;
+        deadline?: string | null;
+        order?: number;
+    }, idToken: string) => {
+        const response = await api.post('/announcements', data, {
+            headers: { Authorization: `Bearer ${idToken}` },
+        });
+        return response.data;
+    },
+
+    update: async (id: string, data: {
+        title?: string;
+        description?: string;
+        imageUrl?: string | null;
+        link?: string | null;
+        deadline?: string | null;
+        isActive?: boolean;
+        order?: number;
+    }, idToken: string) => {
+        const response = await api.put(`/announcements/${id}`, data, {
+            headers: { Authorization: `Bearer ${idToken}` },
+        });
+        return response.data;
+    },
+
+    delete: async (id: string, idToken: string) => {
+        const response = await api.delete(`/announcements/${id}`, {
+            headers: { Authorization: `Bearer ${idToken}` },
+        });
         return response.data;
     },
 };

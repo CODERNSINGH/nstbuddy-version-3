@@ -3,8 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import Layout from '../components/layout/Layout';
 import { useAuth } from '../contexts/AuthContext';
 import { auth } from '../config/firebase';
-import { Plus, Edit, Trash2, LogOut, Users, TrendingUp, BookOpen, MapPin, Filter, ShieldBan, ShieldCheck, MessageSquare, Search, GraduationCap, Loader2 } from 'lucide-react';
-import { campusesApi, contributionsApi, questionsApi, communityApi, adminApi, AdminUser, AdminCourse, CommunityPost } from '../services/api';
+import { Plus, Edit, Trash2, LogOut, Users, TrendingUp, BookOpen, MapPin, Filter, ShieldBan, ShieldCheck, MessageSquare, Search, GraduationCap, Loader2, Megaphone, Eye, EyeOff } from 'lucide-react';
+import { campusesApi, contributionsApi, questionsApi, communityApi, adminApi, announcementsApi, AdminUser, AdminCourse, CommunityPost } from '../services/api';
+import { Announcement } from '../types';
 import PostCard from '../components/community/PostCard';
 import BannerPicker from '../components/groups/BannerPicker';
 
@@ -22,11 +23,12 @@ interface Question {
     subject: string;
     topic: string;
     link: string;
-    semester: number;
+    semester: number | null;
     campus: {
         name: string;
         slug: string;
-    };
+    } | null;
+    customCourse: string | null;
     contributor: {
         name: string;
         email: string;
@@ -50,7 +52,7 @@ const AdminDashboard: React.FC = () => {
     const navigate = useNavigate();
 
     // State
-    const [activeTab, setActiveTab] = useState<'overview' | 'questions' | 'leaderboard' | 'users' | 'community' | 'courses'>('overview');
+    const [activeTab, setActiveTab] = useState<'overview' | 'questions' | 'leaderboard' | 'users' | 'community' | 'courses' | 'announcements'>('overview');
     const [campuses, setCampuses] = useState<Campus[]>([]);
     const [questions, setQuestions] = useState<Question[]>([]);
     const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
@@ -71,6 +73,19 @@ const AdminDashboard: React.FC = () => {
     const [courseSubmitting, setCourseSubmitting] = useState(false);
     const [courseError, setCourseError] = useState('');
     const [adminToken, setAdminToken] = useState<string | null>(null);
+
+    // Announcements - horizontal rail shown on the main page
+    const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+    const [announcementsLoading, setAnnouncementsLoading] = useState(false);
+    const [editingAnnouncement, setEditingAnnouncement] = useState<Announcement | null>(null);
+    const [announcementTitle, setAnnouncementTitle] = useState('');
+    const [announcementDescription, setAnnouncementDescription] = useState('');
+    const [announcementImage, setAnnouncementImage] = useState<string | null>(null);
+    const [announcementLink, setAnnouncementLink] = useState('');
+    const [announcementDeadline, setAnnouncementDeadline] = useState(''); // datetime-local string, e.g. "2026-09-20T18:30"
+    const [announcementSubmitting, setAnnouncementSubmitting] = useState(false);
+    const [announcementError, setAnnouncementError] = useState('');
+    const [announcementBusyId, setAnnouncementBusyId] = useState<string | null>(null);
 
     // Filters
     const [selectedCampus, setSelectedCampus] = useState<string>('');
@@ -110,8 +125,126 @@ const AdminDashboard: React.FC = () => {
         if (activeTab === 'users') fetchUsers();
         if (activeTab === 'community') fetchAllPosts();
         if (activeTab === 'courses') fetchCourses();
+        if (activeTab === 'announcements') fetchAnnouncements();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [activeTab, selectedCampus, selectedSemester, selectedSubject]);
+
+    const fetchAnnouncements = async () => {
+        setAnnouncementsLoading(true);
+        try {
+            const firebaseUser = auth.currentUser;
+            if (!firebaseUser) return;
+            const token = await firebaseUser.getIdToken();
+            setAdminToken(token);
+            const response = await announcementsApi.getAll(token);
+            if (response.success) setAnnouncements(response.announcements);
+        } catch (error) {
+            // Error fetching announcements silently
+        } finally {
+            setAnnouncementsLoading(false);
+        }
+    };
+
+    const resetAnnouncementForm = () => {
+        setEditingAnnouncement(null);
+        setAnnouncementTitle('');
+        setAnnouncementDescription('');
+        setAnnouncementImage(null);
+        setAnnouncementLink('');
+        setAnnouncementDeadline('');
+        setAnnouncementError('');
+    };
+
+    // datetime-local inputs want "YYYY-MM-DDTHH:mm" in the viewer's local time, not a UTC ISO string
+    const toDatetimeLocal = (iso: string) => {
+        const date = new Date(iso);
+        const pad = (n: number) => String(n).padStart(2, '0');
+        return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+    };
+
+    const startEditAnnouncement = (announcement: Announcement) => {
+        setEditingAnnouncement(announcement);
+        setAnnouncementTitle(announcement.title);
+        setAnnouncementDescription(announcement.description);
+        setAnnouncementImage(announcement.imageUrl || null);
+        setAnnouncementLink(announcement.link || '');
+        setAnnouncementDeadline(announcement.deadline ? toDatetimeLocal(announcement.deadline) : '');
+        setAnnouncementError('');
+    };
+
+    const handleAnnouncementSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!announcementTitle.trim() || !announcementDescription.trim() || announcementSubmitting) return;
+        setAnnouncementSubmitting(true);
+        setAnnouncementError('');
+        try {
+            const firebaseUser = auth.currentUser;
+            if (!firebaseUser) return;
+            const token = await firebaseUser.getIdToken();
+            const data = {
+                title: announcementTitle.trim(),
+                description: announcementDescription.trim(),
+                imageUrl: announcementImage,
+                link: announcementLink.trim() || null,
+                deadline: announcementDeadline ? new Date(announcementDeadline).toISOString() : null,
+            };
+
+            if (editingAnnouncement) {
+                const response = await announcementsApi.update(editingAnnouncement.id, data, token);
+                if (response.success) {
+                    setAnnouncements((prev) => prev.map((a) => (a.id === editingAnnouncement.id ? response.announcement : a)));
+                    resetAnnouncementForm();
+                } else {
+                    setAnnouncementError(response.error || 'Failed to update announcement');
+                }
+            } else {
+                const response = await announcementsApi.create(data, token);
+                if (response.success) {
+                    setAnnouncements((prev) => [response.announcement, ...prev]);
+                    resetAnnouncementForm();
+                } else {
+                    setAnnouncementError(response.error || 'Failed to create announcement');
+                }
+            }
+        } catch (error: any) {
+            setAnnouncementError(error.response?.data?.error || 'Failed to save announcement');
+        } finally {
+            setAnnouncementSubmitting(false);
+        }
+    };
+
+    const handleToggleAnnouncementActive = async (announcement: Announcement) => {
+        setAnnouncementBusyId(announcement.id);
+        try {
+            const firebaseUser = auth.currentUser;
+            if (!firebaseUser) return;
+            const token = await firebaseUser.getIdToken();
+            const response = await announcementsApi.update(announcement.id, { isActive: !announcement.isActive }, token);
+            if (response.success) {
+                setAnnouncements((prev) => prev.map((a) => (a.id === announcement.id ? response.announcement : a)));
+            }
+        } catch (error) {
+            alert('Failed to update announcement');
+        } finally {
+            setAnnouncementBusyId(null);
+        }
+    };
+
+    const handleDeleteAnnouncement = async (announcement: Announcement) => {
+        if (!confirm(`Delete the announcement "${announcement.title}"?`)) return;
+        try {
+            const firebaseUser = auth.currentUser;
+            if (!firebaseUser) return;
+            const token = await firebaseUser.getIdToken();
+            const response = await announcementsApi.delete(announcement.id, token);
+            if (response.success) {
+                setAnnouncements((prev) => prev.filter((a) => a.id !== announcement.id));
+                if (editingAnnouncement?.id === announcement.id) resetAnnouncementForm();
+            }
+        } catch (error) {
+            alert('Failed to delete announcement');
+        }
+    };
 
     const fetchCourses = async () => {
         setCoursesLoading(true);
@@ -344,10 +477,14 @@ const AdminDashboard: React.FC = () => {
     };
 
     const startEditQuestion = (question: Question) => {
+        if (!question.campus) {
+            alert('This question belongs to a custom course and cannot be edited from this form yet.');
+            return;
+        }
         setEditingQuestion(question);
         setQuestionForm({
             campusSlug: question.campus.slug,
-            semester: question.semester.toString(),
+            semester: question.semester!.toString(),
             questionName: question.questionName,
             subject: question.subject,
             topic: question.topic,
@@ -437,6 +574,16 @@ const AdminDashboard: React.FC = () => {
                 >
                     <GraduationCap className="w-4 h-4" />
                     Courses
+                </button>
+                <button
+                    onClick={() => setActiveTab('announcements')}
+                    className={`px-4 py-2 font-medium transition-colors flex items-center gap-2 ${activeTab === 'announcements'
+                        ? 'text-brand-600 border-b-2 border-brand-600'
+                        : 'text-gray-600 hover:text-gray-900'
+                        }`}
+                >
+                    <Megaphone className="w-4 h-4" />
+                    Announcements
                 </button>
             </div>
 
@@ -771,8 +918,8 @@ const AdminDashboard: React.FC = () => {
                                                 <div className="text-sm font-medium text-gray-900">{question.questionName}</div>
                                                 <div className="text-xs text-gray-500">{question.topic}</div>
                                             </td>
-                                            <td className="px-6 py-4 text-sm text-gray-600">{question.campus.name}</td>
-                                            <td className="px-6 py-4 text-sm text-gray-600">Sem {question.semester}</td>
+                                            <td className="px-6 py-4 text-sm text-gray-600">{question.campus?.name ?? question.customCourse}</td>
+                                            <td className="px-6 py-4 text-sm text-gray-600">{question.semester != null ? `Sem ${question.semester}` : '—'}</td>
                                             <td className="px-6 py-4 text-sm text-gray-600">{question.subject}</td>
                                             <td className="px-6 py-4">
                                                 <div className="flex items-center gap-2">
@@ -1097,6 +1244,156 @@ const AdminDashboard: React.FC = () => {
                                         onClick={() => handleDeleteCourse(course)}
                                         className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors shrink-0"
                                         title="Remove course"
+                                    >
+                                        <Trash2 className="w-4 h-4" />
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {/* Announcements Tab - horizontal rail shown on the main page; admin only */}
+            {activeTab === 'announcements' && (
+                <div>
+                    <div className="mb-6">
+                        <h2 className="text-2xl font-bold text-gray-900">Announcements</h2>
+                        <p className="text-gray-500 text-sm mt-1">
+                            Shown as a horizontal rail on the main page. Add a title, a short description, and an optional
+                            image blended into the card background.
+                        </p>
+                    </div>
+
+                    <form onSubmit={handleAnnouncementSubmit} className="max-w-lg mb-8 bg-white border border-gray-100 rounded-2xl shadow-sm p-6 space-y-4">
+                        <BannerPicker idToken={adminToken} bannerUrl={announcementImage} onChange={setAnnouncementImage} />
+
+                        <div>
+                            <label className="block text-xs font-semibold text-gray-500 mb-1.5">Title</label>
+                            <input
+                                value={announcementTitle}
+                                onChange={(e) => setAnnouncementTitle(e.target.value.slice(0, 100))}
+                                placeholder="e.g., Hackathon registrations are open"
+                                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-xs font-semibold text-gray-500 mb-1.5">Description</label>
+                            <textarea
+                                value={announcementDescription}
+                                onChange={(e) => setAnnouncementDescription(e.target.value.slice(0, 500))}
+                                rows={3}
+                                placeholder="What's this announcement about?"
+                                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent resize-none"
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-xs font-semibold text-gray-500 mb-1.5">Link (optional)</label>
+                            <input
+                                type="url"
+                                value={announcementLink}
+                                onChange={(e) => setAnnouncementLink(e.target.value)}
+                                placeholder="https://..."
+                                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-xs font-semibold text-gray-500 mb-1.5">Deadline (optional)</label>
+                            <input
+                                type="datetime-local"
+                                value={announcementDeadline}
+                                onChange={(e) => setAnnouncementDeadline(e.target.value)}
+                                className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+                            />
+                            <p className="text-[11px] text-gray-400 mt-1">Shows a live countdown on the announcement's detail popup.</p>
+                        </div>
+
+                        {announcementError && <p className="text-xs text-red-500">{announcementError}</p>}
+
+                        <div className="flex gap-3">
+                            <button
+                                type="submit"
+                                disabled={!announcementTitle.trim() || !announcementDescription.trim() || announcementSubmitting}
+                                className="flex items-center justify-center gap-2 bg-brand-600 hover:bg-brand-700 disabled:bg-gray-200 disabled:text-gray-400 text-white font-semibold py-2.5 px-5 rounded-lg transition-colors flex-1"
+                            >
+                                {announcementSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                                {editingAnnouncement ? 'Update Announcement' : 'Add Announcement'}
+                            </button>
+                            {editingAnnouncement && (
+                                <button
+                                    type="button"
+                                    onClick={resetAnnouncementForm}
+                                    className="px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors font-medium"
+                                >
+                                    Cancel
+                                </button>
+                            )}
+                        </div>
+                    </form>
+
+                    {announcementsLoading ? (
+                        <div className="text-center py-12">
+                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-600 mx-auto"></div>
+                        </div>
+                    ) : announcements.length === 0 ? (
+                        <div className="text-center py-12 bg-gray-50 rounded-xl">
+                            <Megaphone className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                            <h3 className="text-xl font-semibold text-gray-700 mb-2">No announcements yet</h3>
+                            <p className="text-gray-500 text-sm">Add one above to show it on the main page.</p>
+                        </div>
+                    ) : (
+                        <div className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden max-w-2xl">
+                            {announcements.map((announcement, i) => (
+                                <div
+                                    key={announcement.id}
+                                    className={`flex items-center gap-4 px-6 py-4 ${i !== announcements.length - 1 ? 'border-b border-gray-50' : ''} ${!announcement.isActive ? 'opacity-50' : ''}`}
+                                >
+                                    {announcement.imageUrl ? (
+                                        <img src={announcement.imageUrl} alt="" className="w-12 h-12 rounded-lg object-cover shrink-0" />
+                                    ) : (
+                                        <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center text-white shrink-0">
+                                            <Megaphone className="w-5 h-5" />
+                                        </div>
+                                    )}
+                                    <div className="flex-1 min-w-0">
+                                        <p className="font-semibold text-gray-900 text-sm truncate">{announcement.title}</p>
+                                        <p className="text-xs text-gray-500 truncate mt-0.5">{announcement.description}</p>
+                                        <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                                            {!announcement.isActive && (
+                                                <span className="text-[10px] font-semibold text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full inline-block">Hidden</span>
+                                            )}
+                                            {announcement.link && (
+                                                <span className="text-[10px] font-semibold text-brand-600 bg-brand-50 px-2 py-0.5 rounded-full inline-block">Has link</span>
+                                            )}
+                                            {announcement.deadline && (
+                                                <span className="text-[10px] font-semibold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full inline-block">
+                                                    Deadline {new Date(announcement.deadline).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <button
+                                        onClick={() => handleToggleAnnouncementActive(announcement)}
+                                        disabled={announcementBusyId === announcement.id}
+                                        className="p-2 text-gray-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition-colors shrink-0 disabled:opacity-50"
+                                        title={announcement.isActive ? 'Hide from main page' : 'Show on main page'}
+                                    >
+                                        {announcement.isActive ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                                    </button>
+                                    <button
+                                        onClick={() => startEditAnnouncement(announcement)}
+                                        className="p-2 text-gray-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg transition-colors shrink-0"
+                                        title="Edit"
+                                    >
+                                        <Edit className="w-4 h-4" />
+                                    </button>
+                                    <button
+                                        onClick={() => handleDeleteAnnouncement(announcement)}
+                                        className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors shrink-0"
+                                        title="Delete"
                                     >
                                         <Trash2 className="w-4 h-4" />
                                     </button>

@@ -12,6 +12,7 @@ import communityRoutes from './routes/community.js';
 import imagekitRoutes from './routes/imagekit.js';
 import groupRoutes from './routes/groups.js';
 import adminRoutes from './routes/admin.js';
+import announcementRoutes from './routes/announcements.js';
 
 dotenv.config();
 
@@ -56,6 +57,7 @@ app.use('/api/community', communityRoutes);
 app.use('/api/imagekit', imagekitRoutes);
 app.use('/api/groups', groupRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/announcements', announcementRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
