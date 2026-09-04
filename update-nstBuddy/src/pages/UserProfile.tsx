@@ -34,11 +34,12 @@ interface ContributionStats {
     recentContributions: Array<{
         id: string;
         questionName: string;
-        semester: number;
+        semester: number | null;
         campus: {
             name: string;
             slug: string;
-        };
+        } | null;
+        customCourse: string | null;
         createdAt: string;
         isApproved: boolean;
     }>;
@@ -329,10 +330,14 @@ const UserProfile: React.FC = () => {
                                                         {contribution.questionName}
                                                     </h4>
                                                     <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500">
-                                                        <span>{contribution.campus.name}</span>
+                                                        <span>{contribution.campus?.name ?? contribution.customCourse}</span>
                                                         <span>·</span>
-                                                        <span>Semester {contribution.semester}</span>
-                                                        <span>·</span>
+                                                        {contribution.semester != null && (
+                                                            <>
+                                                                <span>Semester {contribution.semester}</span>
+                                                                <span>·</span>
+                                                            </>
+                                                        )}
                                                         <span className="flex items-center gap-1">
                                                             <Calendar className="w-3 h-3" />
                                                             {new Date(contribution.createdAt).toLocaleDateString('en-IN', {

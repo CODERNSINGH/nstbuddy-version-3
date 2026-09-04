@@ -67,6 +67,7 @@ router.get('/my-stats', authenticateUser, async (req, res) => {
                                 slug: true
                             }
                         },
+                        customCourse: true,
                         createdAt: true,
                         isApproved: true
                     },

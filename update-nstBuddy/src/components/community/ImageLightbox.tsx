@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { imagePreviewUrl } from '../../services/imagekit';
@@ -25,7 +26,7 @@ const ImageLightbox: React.FC<ImageLightboxProps> = ({ images, index, onClose, o
         };
     }, [index, images.length, onClose, onNavigate]);
 
-    return (
+    const content = (
         <AnimatePresence>
             <motion.div
                 initial={{ opacity: 0 }}
@@ -77,6 +78,9 @@ const ImageLightbox: React.FC<ImageLightboxProps> = ({ images, index, onClose, o
             </motion.div>
         </AnimatePresence>
     );
+
+    if (typeof document === 'undefined') return null;
+    return createPortal(content, document.body);
 };
 
 export default ImageLightbox;

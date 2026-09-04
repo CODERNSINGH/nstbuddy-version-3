@@ -2,6 +2,7 @@ import React, { useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ImagePlus, X, Loader2, AlertTriangle } from 'lucide-react';
 import { uploadImageToImageKit } from '../../services/imagekit';
+import ImageLightbox from './ImageLightbox';
 
 const MAX_IMAGES = 5;
 const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB - generous enough for uncompressed iPhone HEIC photos
@@ -22,6 +23,7 @@ interface ImagePickerProps {
 
 const ImagePicker: React.FC<ImagePickerProps> = ({ idToken, images, onChange }) => {
     const [pending, setPending] = useState<PendingImage[]>([]);
+    const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
     const inputRef = useRef<HTMLInputElement>(null);
 
     const remainingSlots = MAX_IMAGES - images.length - pending.length;
@@ -65,18 +67,19 @@ const ImagePicker: React.FC<ImagePickerProps> = ({ idToken, images, onChange }) 
             {(images.length > 0 || pending.length > 0) && (
                 <div className="grid grid-cols-3 sm:grid-cols-4 gap-2 mb-2">
                     <AnimatePresence>
-                        {images.map((url) => (
+                        {images.map((url, index) => (
                             <motion.div
                                 key={url}
                                 initial={{ opacity: 0, scale: 0.9 }}
                                 animate={{ opacity: 1, scale: 1 }}
                                 exit={{ opacity: 0, scale: 0.9 }}
-                                className="relative aspect-square rounded-xl overflow-hidden border border-gray-200 group"
+                                className="relative aspect-square rounded-xl overflow-hidden border border-gray-200 group cursor-pointer"
+                                onClick={() => setLightboxIndex(index)}
                             >
                                 <img src={`${url}?tr=f-auto,w-200,h-200,c-maintain_ratio`} alt="" className="w-full h-full object-cover" />
                                 <button
                                     type="button"
-                                    onClick={() => removeUploaded(url)}
+                                    onClick={(e) => { e.stopPropagation(); removeUploaded(url); }}
                                     className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                                 >
                                     <X className="w-3.5 h-3.5" />
@@ -137,6 +140,15 @@ const ImagePicker: React.FC<ImagePickerProps> = ({ idToken, images, onChange }) 
                     }}
                 />
             </div>
+
+            {lightboxIndex !== null && (
+                <ImageLightbox
+                    images={images}
+                    index={lightboxIndex}
+                    onClose={() => setLightboxIndex(null)}
+                    onNavigate={setLightboxIndex}
+                />
+            )}
         </div>
     );
 };

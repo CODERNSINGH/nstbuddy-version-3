@@ -8,7 +8,8 @@ interface SearchResult {
     subject: string;
     topic: string;
     link: string;
-    campus: { name: string; slug: string };
+    campus: { name: string; slug: string } | null;
+    customCourse: string | null;
 }
 
 const GlobalSearch: React.FC = () => {
@@ -85,7 +86,7 @@ const GlobalSearch: React.FC = () => {
                                 <div className="min-w-0">
                                     <p className="text-sm font-semibold text-gray-900 truncate">{result.questionName}</p>
                                     <p className="text-xs text-gray-500 truncate">
-                                        {result.subject} · {result.campus.name}
+                                        {result.subject} · {result.campus?.name ?? result.customCourse}
                                     </p>
                                 </div>
                             </a>
